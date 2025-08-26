@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: ai-no-code-application
+server:
+  port: 8081
