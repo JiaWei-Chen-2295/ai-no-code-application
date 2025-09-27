@@ -49,11 +49,13 @@ public class MyBatisFlexCodeGenerate {
                 .setJdkVersion(21);
 
         //设置生成 mapper
-//        globalConfig.enableMapper();
+        globalConfig.enableMapper();
 
         globalConfig.enableService();
 
         globalConfig.enableController();
+
+        globalConfig.enableEntity();
 
         //可以单独配置某个列
 //        ColumnConfig columnConfig = new ColumnConfig();

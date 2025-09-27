@@ -1,7 +1,9 @@
 package fun.javierchen.ainocodeapplication.service;
 
+import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.core.service.IService;
 import fun.javierchen.ainocodeapplication.model.User;
+import fun.javierchen.ainocodeapplication.model.dto.user.UserQueryRequest;
 import fun.javierchen.ainocodeapplication.model.vo.LoginUserVO;
 import fun.javierchen.ainocodeapplication.model.vo.UserVO;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,7 +25,7 @@ public interface UserService extends IService<User> {
      * @param checkPassword 校验密码
      * @return 新用户 id
      */
-    long userRegister(String userAccount, String userPassword, String checkPassword);
+    long userRegister(String userAccount, String userPassword, String checkPassword, String email);
 
     /**
      * 用户登录
@@ -97,5 +99,10 @@ public interface UserService extends IService<User> {
      * @return
      */
     List<UserVO> getUserVO(List<User> userList);
+
+    /**
+     * 获取 QueryWrapper
+     */
+    QueryWrapper getQueryWrapper(UserQueryRequest userQueryRequest);
 
 }

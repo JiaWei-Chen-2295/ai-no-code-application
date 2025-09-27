@@ -6,8 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 
 @SpringBootApplication
-// 启动时将代理对象暴露出来 便于测试
-@EnableAspectJAutoProxy(exposeProxy = true)
+@EnableAspectJAutoProxy(proxyTargetClass = true, exposeProxy = true)
 @MapperScan("fun.javierchen.ainocodeapplication.mapper")
 public class AiNoCodeApplication {
 
