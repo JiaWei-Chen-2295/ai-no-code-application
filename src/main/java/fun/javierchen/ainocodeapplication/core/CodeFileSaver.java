@@ -25,10 +25,12 @@ public class CodeFileSaver {
         String jsCode = codeResult.getJsCode();
         String description = codeResult.getDescription();
         String uniDir = createUniDir(CodeGenTypeEnum.MUTI_FILE);
+        if (description != null) {
+            writeFile(uniDir, "README.txt", description);
+        }
         writeFile(uniDir, "index.html", htmlCode);
         writeFile(uniDir, "style.css", cssCode);
         writeFile(uniDir, "script.js", jsCode);
-        writeFile(uniDir, "README.txt", description);
         return new File(uniDir);
     }
 
@@ -41,7 +43,11 @@ public class CodeFileSaver {
     public static File saveSingletonHtmlCode(HtmlCodeResult result) {
         String uniDir = createUniDir(CodeGenTypeEnum.HTML);
         writeFile(uniDir, "index.html", result.getHtmlCode());
-        writeFile(uniDir, "README.txt", result.getDescription());
+        String description = result.getDescription();
+        if (description != null) {
+            writeFile(uniDir, "README.txt", description);
+        }
+        writeFile(uniDir, "README.txt", description);
         return new File(uniDir);
     }
 
