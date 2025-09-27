@@ -31,3 +31,5 @@ build/
 
 ### VS Code ###
 .vscode/
+### 生成的代码文件 ###
+/tmp/
