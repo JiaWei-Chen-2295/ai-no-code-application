@@ -14,14 +14,15 @@ public enum CodeGenTypeEnum {
     private String typeName;
 
     /**
-     * 根据类型获取类型名
+     * 根据类型获取枚举
+     *
      * @param type
      * @return
      */
-    public static String getTypeNameByType(String type) {
+    public static CodeGenTypeEnum getEnumByType(String type) {
         for (CodeGenTypeEnum value : values()) {
-            if (value.type.equals(type)) {
-                return value.typeName;
+            if (value.getType().equals(type)) {
+                return value;
             }
         }
         return null;

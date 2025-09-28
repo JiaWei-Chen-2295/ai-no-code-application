@@ -1,9 +1,12 @@
 package fun.javierchen.ainocodeapplication.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.StrUtil;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
+import fun.javierchen.ainocodeapplication.ai.model.enums.CodeGenTypeEnum;
 import fun.javierchen.ainocodeapplication.constant.CommonConstant;
+import fun.javierchen.ainocodeapplication.core.AiGenerateServiceFacade;
 import fun.javierchen.ainocodeapplication.exceptiom.BusinessException;
 import fun.javierchen.ainocodeapplication.exceptiom.ErrorCode;
 import fun.javierchen.ainocodeapplication.mapper.AppMapper;
@@ -14,11 +17,13 @@ import fun.javierchen.ainocodeapplication.model.vo.AppVO;
 import fun.javierchen.ainocodeapplication.model.vo.UserVO;
 import fun.javierchen.ainocodeapplication.service.AppService;
 import fun.javierchen.ainocodeapplication.service.UserService;
+import fun.javierchen.ainocodeapplication.utils.ThrowUtils;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +43,9 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     @Resource
     private UserService userService;
 
+    @Resource
+    private AiGenerateServiceFacade aiGenerateServiceFacade;
+
     @Override
     public void validApp(App app, boolean add) {
         if (app == null) {
@@ -45,11 +53,15 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         }
         String appName = app.getAppName();
         String initPrompt = app.getInitPrompt();
+        String codeGenType = app.getCodeGenType();
 
         // 创建时，参数不能为空
         if (add) {
             if (StringUtils.isAnyBlank(appName, initPrompt)) {
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "应用名称和初始化提示不能为空");
+            }
+            if (StringUtils.isBlank(codeGenType) && CodeGenTypeEnum.getEnumByType(codeGenType) == null) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "不支持的代码生成类型");
             }
         }
         // 有参数则校验
@@ -59,7 +71,33 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         if (StringUtils.isNotBlank(initPrompt) && initPrompt.length() > 8192) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "应用描述过长");
         }
+        if (StringUtils.isNotBlank(codeGenType) && CodeGenTypeEnum.getEnumByType(codeGenType) == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "不支持的代码生成类型");
+        }
     }
+
+    @Override
+    public Flux<String> chatGenCode(Long appId, String message, User loginUser) {
+        // 1. 参数校验
+        ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用 ID 不能为空");
+        ThrowUtils.throwIf(StrUtil.isBlank(message), ErrorCode.PARAMS_ERROR, "用户消息不能为空");
+        // 2. 查询应用信息
+        App app = this.getById(appId);
+        ThrowUtils.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "应用不存在");
+        // 3. 验证用户是否有权限访问该应用，仅本人可以生成代码
+        if (!app.getUserId().equals(loginUser.getId())) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权限访问该应用");
+        }
+        // 4. 获取应用的代码生成类型
+        String codeGenTypeStr = app.getCodeGenType();
+        CodeGenTypeEnum codeGenTypeEnum = CodeGenTypeEnum.getEnumByType(codeGenTypeStr);
+        if (codeGenTypeEnum == null) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "不支持的代码生成类型");
+        }
+        // 5. 调用 AI 生成代码
+        return aiGenerateServiceFacade.generateAndSaveFileStream(message, codeGenTypeEnum, appId);
+    }
+
 
     @Override
     public AppVO getAppVO(App app) {

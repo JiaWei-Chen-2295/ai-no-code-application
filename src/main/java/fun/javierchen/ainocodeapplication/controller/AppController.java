@@ -19,7 +19,9 @@ import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -57,14 +59,14 @@ public class AppController {
         App app = new App();
         BeanUtils.copyProperties(appAddRequest, app);
         appService.validApp(app, true);
-        
+
         User loginUser = userService.getLoginUser(request);
         app.setUserId(loginUser.getId());
         app.setCreateTime(LocalDateTime.now());
         app.setUpdateTime(LocalDateTime.now());
         app.setEditTime(LocalDateTime.now());
         app.setIsDelete(0);
-        
+
         boolean result = appService.save(app);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(app.getId());
@@ -83,16 +85,16 @@ public class AppController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         User loginUser = userService.getLoginUser(request);
-        
+
         // 判断是否存在
         App oldApp = appService.getById(deleteId);
         ThrowUtils.throwIf(oldApp == null, ErrorCode.NOT_FOUND_ERROR);
-        
+
         // 仅本人或管理员可删除
         if (!oldApp.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }
-        
+
         boolean b = appService.removeById(deleteId);
         return ResultUtils.success(b);
     }
@@ -106,30 +108,30 @@ public class AppController {
      */
     @PostMapping("/update/my")
     public BaseResponse<Boolean> updateMyApp(@RequestBody AppUpdateMyRequest appUpdateMyRequest,
-                                            HttpServletRequest request) {
+                                             HttpServletRequest request) {
         if (appUpdateMyRequest == null || appUpdateMyRequest.getId() == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         User loginUser = userService.getLoginUser(request);
         long id = appUpdateMyRequest.getId();
-        
+
         // 判断是否存在
         App oldApp = appService.getById(id);
         ThrowUtils.throwIf(oldApp == null, ErrorCode.NOT_FOUND_ERROR);
-        
+
         // 仅本人可修改
         if (!oldApp.getUserId().equals(loginUser.getId())) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }
-        
+
         App app = new App();
         BeanUtils.copyProperties(appUpdateMyRequest, app);
         app.setEditTime(LocalDateTime.now());
         app.setUpdateTime(LocalDateTime.now());
-        
+
         // 参数校验
         appService.validApp(app, false);
-        
+
         boolean result = appService.updateById(app);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(true);
@@ -162,7 +164,7 @@ public class AppController {
      */
     @PostMapping("/my/list/page/vo")
     public BaseResponse<Page<AppVO>> listMyAppVOByPage(@RequestBody AppQueryRequest appQueryRequest,
-                                                      HttpServletRequest request) {
+                                                       HttpServletRequest request) {
         if (appQueryRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -186,7 +188,7 @@ public class AppController {
      */
     @PostMapping("/featured/list/page/vo")
     public BaseResponse<Page<AppVO>> listFeaturedAppVOByPage(@RequestBody AppQueryRequest appQueryRequest,
-                                                            HttpServletRequest request) {
+                                                             HttpServletRequest request) {
         if (appQueryRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -194,11 +196,11 @@ public class AppController {
         long size = appQueryRequest.getPageSize();
         // 限制爬虫
         ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
-        
+
         // 查询优先级大于0的应用（精选应用）
         QueryWrapper queryWrapper = appService.getQueryWrapper(appQueryRequest);
         queryWrapper.gt("priority", 0);
-        
+
         Page<App> appPage = appService.page(new Page<>(current, size), queryWrapper);
         return getAppVOPage(appPage, request);
     }
@@ -234,7 +236,7 @@ public class AppController {
     @PostMapping("/update/admin")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Boolean> updateApp(@RequestBody AppUpdateRequest appUpdateRequest,
-                                          HttpServletRequest request) {
+                                           HttpServletRequest request) {
         if (appUpdateRequest == null || appUpdateRequest.getId() == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -242,10 +244,10 @@ public class AppController {
         BeanUtils.copyProperties(appUpdateRequest, app);
         app.setEditTime(LocalDateTime.now());
         app.setUpdateTime(LocalDateTime.now());
-        
+
         // 参数校验
         appService.validApp(app, false);
-        
+
         boolean result = appService.updateById(app);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(true);
@@ -279,7 +281,7 @@ public class AppController {
     @PostMapping("/list/page/admin")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Page<App>> listAppByPage(@RequestBody AppQueryRequest appQueryRequest,
-                                                HttpServletRequest request) {
+                                                 HttpServletRequest request) {
         long current = appQueryRequest.getCurrent();
         long size = appQueryRequest.getPageSize();
         Page<App> appPage = appService.page(new Page<>(current, size),
@@ -297,6 +299,24 @@ public class AppController {
         List<AppVO> appVO = appService.getAppVO(appPage.getRecords());
         appVOPage.setRecords(appVO);
         return ResultUtils.success(appVOPage);
+    }
+
+    /**
+     * 聊天生成代码
+     *
+     * @param appId
+     * @param message
+     * @return
+     */
+    @GetMapping(value = "chat/gen/code", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<String> chatGenCode(@RequestParam Long appId,
+                                    @RequestParam String message,
+                                    HttpServletRequest request) {
+
+        ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用 ID 不能为空");
+        ThrowUtils.throwIf(StringUtils.isBlank(message), ErrorCode.PARAMS_ERROR, "用户消息不能为空");
+        User loginUser = userService.getLoginUser(request);
+        return appService.chatGenCode(appId, message, loginUser);
     }
 
 }

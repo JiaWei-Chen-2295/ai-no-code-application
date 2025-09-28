@@ -2,9 +2,11 @@ package fun.javierchen.ainocodeapplication.service;
 
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.core.service.IService;
+import fun.javierchen.ainocodeapplication.model.User;
 import fun.javierchen.ainocodeapplication.model.entity.App;
 import fun.javierchen.ainocodeapplication.model.dto.app.AppQueryRequest;
 import fun.javierchen.ainocodeapplication.model.vo.AppVO;
+import reactor.core.publisher.Flux;
 
 import java.util.List;
 
@@ -41,5 +43,10 @@ public interface AppService extends IService<App> {
      * 校验应用
      */
     void validApp(App app, boolean add);
+
+    /**
+     * 根据提示词生成代码
+     */
+    Flux<String> chatGenCode(Long appId, String message, User loginUser);
 
 }
