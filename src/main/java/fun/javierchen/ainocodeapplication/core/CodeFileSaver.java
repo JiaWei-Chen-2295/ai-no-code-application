@@ -1,21 +1,17 @@
 package fun.javierchen.ainocodeapplication.core;
 
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.lang.Snowflake;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import fun.javierchen.ainocodeapplication.ai.model.HtmlCodeResult;
 import fun.javierchen.ainocodeapplication.ai.model.MultiFileCodeResult;
 import fun.javierchen.ainocodeapplication.ai.model.enums.CodeGenTypeEnum;
 import fun.javierchen.ainocodeapplication.constant.CodeFileConstant;
-import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
-
+@Deprecated
 public class CodeFileSaver {
-
-
     /**
      * 保存多文件代码
      */
