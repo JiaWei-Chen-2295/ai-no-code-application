@@ -17,11 +17,11 @@ public abstract class CodeFileSaverTemplate<T> {
      * @param result
      * @return
      */
-    public final File saveCodeFile(T result) {
+    public final File saveCodeFile(T result, Long appId) {
         // 验证输入参数
         validateInput(result);
         // 新建一个独一无二的目录
-        String uniDir = createUniDir();
+        String uniDir = createUniDir(appId);
         // 保存文件到这个目录
         saveFiles(uniDir, result);
         return new File(uniDir);
@@ -45,6 +45,16 @@ public abstract class CodeFileSaverTemplate<T> {
         CodeGenTypeEnum codeGenType = getCodeGenType();
         String snowflakeStr = IdUtil.getSnowflakeNextIdStr();
         String dirName = CodeFileConstant.CODE_FILE_PATH + File.separator + StrUtil.format("{}_{}", codeGenType.getType(), snowflakeStr);
+        FileUtil.mkdir(dirName);
+        return dirName;
+    }
+
+    /**
+     * 新建一个独一无二的目录 通过 appId
+     */
+    private String createUniDir(Long appId) {
+        CodeGenTypeEnum codeGenType = getCodeGenType();
+        String dirName = CodeFileConstant.CODE_FILE_PATH + File.separator + StrUtil.format("{}_{}", codeGenType.getType(), appId);
         FileUtil.mkdir(dirName);
         return dirName;
     }

@@ -32,18 +32,18 @@ public class AiGenerateServiceFacade {
      * @param codeGenTypeEnum
      * @return
      */
-    File generateAndSaveFile(String userMessage, CodeGenTypeEnum codeGenTypeEnum) {
+    File generateAndSaveFile(String userMessage, CodeGenTypeEnum codeGenTypeEnum, Long appId) {
         if (codeGenTypeEnum == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "生成的内容为空");
         }
         return switch (codeGenTypeEnum) {
             case HTML -> {
                 HtmlCodeResult htmlCodeResult = aiCodeGeneratorService.generateSingleHTMLCode(userMessage);
-                yield CodeFileSaverExecutor.saveCodeFile(htmlCodeResult, CodeGenTypeEnum.HTML);
+                yield CodeFileSaverExecutor.saveCodeFile(htmlCodeResult, CodeGenTypeEnum.HTML, appId);
             }
             case MUTI_FILE -> {
                 MultiFileCodeResult multiFileCodeResult = aiCodeGeneratorService.generateMultiHTMLCode(userMessage);
-                yield CodeFileSaverExecutor.saveCodeFile(multiFileCodeResult, CodeGenTypeEnum.MUTI_FILE);
+                yield CodeFileSaverExecutor.saveCodeFile(multiFileCodeResult, CodeGenTypeEnum.MUTI_FILE, appId);
             }
         };
     }
@@ -55,13 +55,13 @@ public class AiGenerateServiceFacade {
      * @param codeGenTypeEnum
      * @return
      */
-    public Flux<String> generateAndSaveFileStream(String userMessage, CodeGenTypeEnum codeGenTypeEnum) {
+    public Flux<String> generateAndSaveFileStream(String userMessage, CodeGenTypeEnum codeGenTypeEnum, Long appId) {
         if (codeGenTypeEnum == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "生成的内容为空");
         }
         return switch (codeGenTypeEnum) {
-            case HTML -> generateAndSaveSingleHTMLCodeStream(userMessage);
-            case MUTI_FILE -> generateAndSaveMultiHTMLCodeStream(userMessage);
+            case HTML -> generateAndSaveSingleHTMLCodeStream(userMessage, appId);
+            case MUTI_FILE -> generateAndSaveMultiHTMLCodeStream(userMessage, appId);
         };
     }
 
@@ -71,9 +71,9 @@ public class AiGenerateServiceFacade {
      * @param userMessage
      * @return
      */
-    private Flux<String> generateAndSaveSingleHTMLCodeStream(String userMessage) {
+    private Flux<String> generateAndSaveSingleHTMLCodeStream(String userMessage, Long appId) {
         Flux<String> result = aiCodeGeneratorService.generateMultiHTMLCodeStream(userMessage);
-        return codeGenerateAndSaveStream(result, CodeGenTypeEnum.HTML);
+        return codeGenerateAndSaveStream(result, CodeGenTypeEnum.HTML, appId);
     }
 
     /**
@@ -82,9 +82,9 @@ public class AiGenerateServiceFacade {
      * @param userMessage
      * @return
      */
-    private Flux<String> generateAndSaveMultiHTMLCodeStream(String userMessage) {
+    private Flux<String> generateAndSaveMultiHTMLCodeStream(String userMessage, Long appId) {
         Flux<String> result = aiCodeGeneratorService.generateMultiHTMLCodeStream(userMessage);
-        return codeGenerateAndSaveStream(result, CodeGenTypeEnum.MUTI_FILE);
+        return codeGenerateAndSaveStream(result, CodeGenTypeEnum.MUTI_FILE, appId);
     }
 
 
@@ -95,7 +95,7 @@ public class AiGenerateServiceFacade {
      * @param codeGenType
      * @return
      */
-    private Flux<String> codeGenerateAndSaveStream(Flux<String> result, CodeGenTypeEnum codeGenType) {
+    private Flux<String> codeGenerateAndSaveStream(Flux<String> result, CodeGenTypeEnum codeGenType, Long appId) {
         StringBuilder sb = new StringBuilder();
         return result.doOnNext(
                         chunk -> sb.append(chunk)
@@ -103,7 +103,7 @@ public class AiGenerateServiceFacade {
                 .doOnComplete(() -> {
                     String strResult = sb.toString();
                     Object executeResult = CodeParserExecutor.execute(strResult, codeGenType);
-                    File file = CodeFileSaverExecutor.saveCodeFile(executeResult, codeGenType);
+                    File file = CodeFileSaverExecutor.saveCodeFile(executeResult, codeGenType, appId);
                     log.info("保存成功：{}", file.getAbsolutePath());
                 });
     }

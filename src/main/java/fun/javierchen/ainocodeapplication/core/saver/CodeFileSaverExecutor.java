@@ -20,10 +20,10 @@ public class CodeFileSaverExecutor {
      * @param codeGenTypeEnum
      * @return
      */
-    public static File saveCodeFile(Object result, CodeGenTypeEnum codeGenTypeEnum) {
+    public static File saveCodeFile(Object result, CodeGenTypeEnum codeGenTypeEnum, Long appId) {
         return switch (codeGenTypeEnum) {
-            case HTML -> htmlCodeFileSaverTemplate.saveCodeFile((HtmlCodeResult) result);
-            case MUTI_FILE -> multiFileCodeFileSaverTemplate.saveCodeFile((MultiFileCodeResult) result);
+            case HTML -> htmlCodeFileSaverTemplate.saveCodeFile((HtmlCodeResult) result, appId);
+            case MUTI_FILE -> multiFileCodeFileSaverTemplate.saveCodeFile((MultiFileCodeResult) result, appId);
         };
     }
 }

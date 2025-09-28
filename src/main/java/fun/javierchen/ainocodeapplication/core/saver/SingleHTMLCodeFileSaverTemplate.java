@@ -14,9 +14,12 @@ public class SingleHTMLCodeFileSaverTemplate extends CodeFileSaverTemplate<HtmlC
 
     @Override
     void saveFiles(String uniDir, HtmlCodeResult result) {
+        String htmlCode = result.getHtmlCode();
         String description = result.getDescription();
+
         if (description != null) {
             writeFile(uniDir, "README.txt", description);
         }
+        writeFile(uniDir, "index.html", htmlCode);
     }
 }
