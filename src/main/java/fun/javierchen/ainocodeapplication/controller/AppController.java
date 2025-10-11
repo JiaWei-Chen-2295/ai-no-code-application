@@ -9,12 +9,10 @@ import fun.javierchen.ainocodeapplication.constant.UserConstant;
 import fun.javierchen.ainocodeapplication.exceptiom.BusinessException;
 import fun.javierchen.ainocodeapplication.exceptiom.ErrorCode;
 import fun.javierchen.ainocodeapplication.model.User;
-import fun.javierchen.ainocodeapplication.model.dto.app.AppAddRequest;
-import fun.javierchen.ainocodeapplication.model.dto.app.AppQueryRequest;
-import fun.javierchen.ainocodeapplication.model.dto.app.AppUpdateMyRequest;
-import fun.javierchen.ainocodeapplication.model.dto.app.AppUpdateRequest;
+import fun.javierchen.ainocodeapplication.model.dto.app.*;
 import fun.javierchen.ainocodeapplication.model.entity.App;
 import fun.javierchen.ainocodeapplication.model.vo.AppVO;
+import fun.javierchen.ainocodeapplication.model.vo.AppVersionVO;
 import fun.javierchen.ainocodeapplication.service.AppService;
 import fun.javierchen.ainocodeapplication.service.UserService;
 import fun.javierchen.ainocodeapplication.utils.ResultUtils;
@@ -104,7 +102,7 @@ public class AppController {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }
 
-        boolean b = appService.removeById(deleteId);
+        boolean b = appService.deleteAppAndChatHistory(deleteId, loginUser);
         return ResultUtils.success(b);
     }
 
@@ -231,7 +229,8 @@ public class AppController {
         if (deleteId == null || deleteId <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        boolean b = appService.removeById(deleteId);
+        User loginUser = userService.getLoginUser(request);
+        boolean b = appService.deleteAppAndChatHistory(deleteId, loginUser);
         return ResultUtils.success(b);
     }
 
@@ -338,4 +337,64 @@ public class AppController {
                 .build()));
     }
 
+    /**
+     * 应用部署
+     *
+     * @param appDeployRequest 部署请求
+     * @param request          请求
+     * @return 部署 URL
+     */
+    @PostMapping("/deploy")
+    public BaseResponse<String> deployApp(@RequestBody AppDeployRequest appDeployRequest, HttpServletRequest request) {
+        ThrowUtils.throwIf(appDeployRequest == null, ErrorCode.PARAMS_ERROR);
+        Long appId = appDeployRequest.getAppId();
+        ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用 ID 不能为空");
+        
+        // 获取当前登录用户
+        User loginUser = userService.getLoginUser(request);
+        
+        // 调用服务部署应用，支持版本参数
+        Integer version = appDeployRequest.getVersion();
+        String deployUrl = appService.deployApp(appId, loginUser, version);
+        
+        return ResultUtils.success(deployUrl);
+    }
+
+    /**
+     * 获取应用的所有版本列表
+     */
+    @GetMapping("/{appId}/versions")
+    public BaseResponse<List<AppVersionVO>> getAppVersions(
+            @PathVariable Long appId,
+            HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
+        List<AppVersionVO> versions = appService.getAppVersions(appId, loginUser);
+        return ResultUtils.success(versions);
+    }
+
+    /**
+     * 获取应用特定版本的详情
+     */
+    @GetMapping("/{appId}/versions/{version}")
+    public BaseResponse<AppVersionVO> getAppVersion(
+            @PathVariable Long appId,
+            @PathVariable Integer version,
+            HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
+        AppVersionVO versionVO = appService.getAppVersion(appId, version, loginUser);
+        return ResultUtils.success(versionVO);
+    }
+
+    /**
+     * 删除应用的特定版本
+     */
+    @DeleteMapping("/{appId}/versions/{version}")
+    public BaseResponse<Boolean> deleteAppVersion(
+            @PathVariable Long appId,
+            @PathVariable Integer version,
+            HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
+        boolean result = appService.deleteAppVersion(appId, version, loginUser);
+        return ResultUtils.success(result);
+    }
 }

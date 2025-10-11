@@ -17,11 +17,11 @@ public abstract class CodeFileSaverTemplate<T> {
      * @param result
      * @return
      */
-    public final File saveCodeFile(T result, Long appId) {
+    public final File saveCodeFile(T result, Long appId, int version) {
         // 验证输入参数
         validateInput(result);
         // 新建一个独一无二的目录
-        String uniDir = createUniDir(appId);
+        String uniDir = createUniDirWithVersion(appId, version);
         // 保存文件到这个目录
         saveFiles(uniDir, result);
         return new File(uniDir);
@@ -58,6 +58,18 @@ public abstract class CodeFileSaverTemplate<T> {
         FileUtil.mkdir(dirName);
         return dirName;
     }
+
+    /**
+     * 新建一个独一无二的目录 通过 appId
+     */
+    private String createUniDirWithVersion(Long appId, int version) {
+        CodeGenTypeEnum codeGenType = getCodeGenType();
+        String dirName = CodeFileConstant.CODE_FILE_PATH + File.separator + StrUtil.format("{}_{}", codeGenType.getType(), appId);
+        String versionFileName = dirName + File.separator + version;
+        FileUtil.mkdir(versionFileName);
+        return versionFileName;
+    }
+
 
     /**
      * 获取代码的类型

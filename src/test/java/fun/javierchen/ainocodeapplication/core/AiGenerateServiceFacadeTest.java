@@ -25,14 +25,14 @@ class AiGenerateServiceFacadeTest {
     @Test
     void generateHtmlCode() {
         Long appId = new Random().nextLong();
-        File file = aiGenerateServiceFacade.generateAndSaveFile("生成一个注册页面 行数小于30行", CodeGenTypeEnum.HTML, appId);
+        File file = aiGenerateServiceFacade.generateAndSaveFile("生成一个注册页面 行数小于30行", CodeGenTypeEnum.HTML, appId, 1);
         assertNotNull(file);
     }
 
     @Test
     void generateMutiFileCode() {
         Long appId = new Random().nextLong();
-        File result = aiGenerateServiceFacade.generateAndSaveFile("生成一个注册页面 行数小于30行", CodeGenTypeEnum.MUTI_FILE, appId);
+        File result = aiGenerateServiceFacade.generateAndSaveFile("生成一个注册页面 行数小于30行", CodeGenTypeEnum.MUTI_FILE, appId, 2);
         assertNotNull(result);
     }
 

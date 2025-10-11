@@ -1,10 +1,14 @@
 package fun.javierchen.ainocodeapplication.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import fun.javierchen.ainocodeapplication.ai.model.enums.CodeGenTypeEnum;
+import fun.javierchen.ainocodeapplication.constant.AppConstant;
+import fun.javierchen.ainocodeapplication.constant.CodeFileConstant;
 import fun.javierchen.ainocodeapplication.constant.CommonConstant;
 import fun.javierchen.ainocodeapplication.core.AiGenerateServiceFacade;
 import fun.javierchen.ainocodeapplication.exceptiom.BusinessException;
@@ -13,18 +17,24 @@ import fun.javierchen.ainocodeapplication.mapper.AppMapper;
 import fun.javierchen.ainocodeapplication.model.User;
 import fun.javierchen.ainocodeapplication.model.entity.App;
 import fun.javierchen.ainocodeapplication.model.dto.app.AppQueryRequest;
+import fun.javierchen.ainocodeapplication.model.entity.ChatHistory;
 import fun.javierchen.ainocodeapplication.model.vo.AppVO;
+import fun.javierchen.ainocodeapplication.model.vo.AppVersionVO;
 import fun.javierchen.ainocodeapplication.model.vo.UserVO;
 import fun.javierchen.ainocodeapplication.service.AppService;
+import fun.javierchen.ainocodeapplication.service.ChatHistoryService;
 import fun.javierchen.ainocodeapplication.service.UserService;
 import fun.javierchen.ainocodeapplication.utils.ThrowUtils;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
+import java.io.File;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +55,10 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
 
     @Resource
     private AiGenerateServiceFacade aiGenerateServiceFacade;
+
+    @Lazy
+    @Resource
+    private ChatHistoryService chatHistoryService;
 
     @Override
     public void validApp(App app, boolean add) {
@@ -94,8 +108,47 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         if (codeGenTypeEnum == null) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "不支持的代码生成类型");
         }
-        // 5. 调用 AI 生成代码
-        return aiGenerateServiceFacade.generateAndSaveFileStream(message, codeGenTypeEnum, appId);
+
+        // 5. 完成基础的校验后 保存用户的历史记录
+        chatHistoryService.saveUserMessage(appId, loginUser.getId(), message);
+
+        // 6. 调用 AI 生成代码，使用带回调的方法避免重复解析
+        StringBuilder aiGenResult = new StringBuilder();
+        Flux<String> contentFlux = aiGenerateServiceFacade.generateAndSaveFileStream(
+                message, 
+                codeGenTypeEnum,
+                appId,
+                // 7. 使用回调保存AI对话，避免重复解析
+                (parseResult, version) -> {
+                    String result = aiGenResult.toString();
+                    if (StrUtil.isNotBlank(result)) {
+                        // 使用新的方法，传入解析结果而不是重复解析
+                        chatHistoryService.saveAiMessageWithParseResult(
+                                appId, 
+                                loginUser.getId(), 
+                                result, 
+                                parseResult, 
+                                null
+                        );
+                        log.info("保存AI对话历史成功，应用ID：{}，版本号：{}，是否包含代码：{}", 
+                                appId, version, parseResult.isHasValidCode());
+                    }
+                }
+        );
+        
+        return contentFlux.map(chunk -> {
+                    aiGenResult.append(chunk);
+                    return chunk;
+                })
+                .doOnError(
+                        // 有错误也要保存到历史中
+                        error -> {
+                            String errorMessage = "【AI生成有误】" + error.getMessage();
+                            // 错误情况下使用原方法，因为没有解析结果
+                            chatHistoryService.saveAiMessage(appId, loginUser.getId(), 
+                                    aiGenResult.toString(), false, errorMessage);
+                        }
+                );
     }
 
 
@@ -106,7 +159,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         }
         AppVO appVO = new AppVO();
         BeanUtils.copyProperties(app, appVO);
-        
+
         // 关联查询用户信息
         Long userId = app.getUserId();
         if (userId != null && userId > 0) {
@@ -114,7 +167,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
             UserVO userVO = userService.getUserVO(user);
             appVO.setUser(userVO);
         }
-        
+
         return appVO;
     }
 
@@ -123,7 +176,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         if (CollUtil.isEmpty(appList)) {
             return new ArrayList<>();
         }
-        
+
         // 关联查询用户信息
         Set<Long> userIdSet = appList.stream()
                 .map(App::getUserId)
@@ -131,7 +184,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         Map<Long, List<User>> userIdUserListMap = userService.listByIds(userIdSet)
                 .stream()
                 .collect(Collectors.groupingBy(User::getId));
-        
+
         // 填充信息
         return appList.stream().map(app -> {
             AppVO appVO = new AppVO();
@@ -192,5 +245,316 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         }
 
         return queryWrapper;
+    }
+
+    @Override
+    public String deployApp(Long appId, User loginUser) {
+        return deployApp(appId, loginUser, null); // 部署最新版本
+    }
+
+    @Override
+    public String deployApp(Long appId, User loginUser, Integer version) {
+        // 1. 参数校验
+        ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用 ID 不能为空");
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR, "用户未登录");
+        
+        // 2. 查询应用信息
+        App app = this.getById(appId);
+        ThrowUtils.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "应用不存在");
+        
+        // 3. 验证用户是否有权限部署该应用，仅本人可以部署
+        if (!app.getUserId().equals(loginUser.getId())) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权限部署该应用");
+        }
+        
+        // 4. 获取要部署的版本号
+        int deployVersion;
+        if (version != null && version > 0) {
+            deployVersion = version;
+        } else {
+            // 获取最新版本
+            deployVersion = getLatestCodeVersion(appId);
+            if (deployVersion == 0) {
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR, "应用尚未生成任何代码，请先生成代码");
+            }
+        }
+        
+        // 5. 检查是否已有 deployKey
+        String deployKey = app.getDeployKey();
+        // 没有则生成 6 位 deployKey（大小写字母 + 数字）
+        if (StrUtil.isBlank(deployKey)) {
+            deployKey = RandomUtil.randomString(6);
+        }
+        
+        // 6. 获取代码生成类型，构建版本化的源目录路径
+        String codeGenType = app.getCodeGenType();
+        String sourceDirName = codeGenType + "_" + appId;
+        String sourceDirPath = CodeFileConstant.CODE_FILE_PATH + File.separator + sourceDirName + File.separator + deployVersion;
+        
+        // 7. 检查源目录是否存在
+        File sourceDir = new File(sourceDirPath);
+        if (!sourceDir.exists() || !sourceDir.isDirectory()) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, 
+                    String.format("版本 %d 的代码不存在，请检查版本号或重新生成代码", deployVersion));
+        }
+        
+        // 8. 复制文件到部署目录
+        String deployDirPath = AppConstant.CODE_DEPLOY_ROOT_DIR + File.separator + deployKey;
+        try {
+            // 清理旧的部署文件
+            File deployDir = new File(deployDirPath);
+            if (deployDir.exists()) {
+                FileUtil.del(deployDir);
+            }
+            // 复制新版本
+            FileUtil.copyContent(sourceDir, new File(deployDirPath), true);
+            log.info("成功部署应用 {}，版本：{}，部署路径：{}", appId, deployVersion, deployDirPath);
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "部署失败：" + e.getMessage());
+        }
+        
+        // 9. 更新应用的 deployKey 和部署时间
+        App updateApp = new App();
+        updateApp.setId(appId);
+        updateApp.setDeployKey(deployKey);
+        updateApp.setDeployedTime(LocalDateTime.now());
+        boolean updateResult = this.updateById(updateApp);
+        ThrowUtils.throwIf(!updateResult, ErrorCode.OPERATION_ERROR, "更新应用部署信息失败");
+        
+        // 10. 返回可访问的 URL
+        return String.format("%s/%s/", AppConstant.CODE_DEPLOY_HOST, deployKey);
+    }
+
+    /**
+     * 获取应用的最新代码版本号
+     * @param appId 应用ID
+     * @return 最新版本号，如果没有代码则返回0
+     */
+    private int getLatestCodeVersion(Long appId) {
+        try {
+            QueryWrapper queryWrapper = QueryWrapper.create()
+                    .select("codeVersion")
+                    .from(ChatHistory.class)
+                    .where(ChatHistory::getAppId).eq(appId)
+                    .and(ChatHistory::getIsCode).eq(1)
+                    .and(ChatHistory::getIsDelete).eq(0)
+                    .orderBy(ChatHistory::getCodeVersion, false) // 按版本号降序
+                    .limit(1);
+            
+            ChatHistory latestCodeHistory = chatHistoryService.getOne(queryWrapper);
+            return latestCodeHistory != null && latestCodeHistory.getCodeVersion() != null 
+                    ? latestCodeHistory.getCodeVersion() : 0;
+        } catch (Exception e) {
+            log.warn("获取最新版本号失败：{}", e.getMessage());
+            return 0;
+        }
+    }
+
+    @Override
+    public boolean deleteAppAndChatHistory(Long appId, User loginUser) {
+        // 1. 参数校验
+        ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用 ID 不能为空");
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR, "用户未登录");
+
+        // 2. 查询应用信息
+        App app = this.getById(appId);
+        ThrowUtils.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "应用不存在");
+
+        // 3. 验证用户是否有权限删除该应用，仅本人或管理员可以删除
+        if (!app.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权限删除该应用");
+        }
+
+        // 4. 删除应用关联的对话历史
+        boolean deleteChatHistoryResult = chatHistoryService.deleteChatHistoryByAppId(appId);
+        if (!deleteChatHistoryResult) {
+            log.warn("删除应用关联的对话历史失败，appId = {}", appId);
+        }
+
+        // 5. 删除应用
+        return this.removeById(appId);
+    }
+
+    @Override
+    public List<AppVersionVO> getAppVersions(Long appId, User loginUser) {
+        // 1. 参数校验
+        ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用 ID 不能为空");
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR, "用户未登录");
+
+        // 2. 查询应用信息
+        App app = this.getById(appId);
+        ThrowUtils.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "应用不存在");
+
+        // 3. 验证权限（仅应用创建者可查看版本）
+        if (!app.getUserId().equals(loginUser.getId())) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权限查看该应用的版本信息");
+        }
+
+        // 4. 查询所有代码版本的对话历史
+        QueryWrapper queryWrapper = QueryWrapper.create()
+                .from(ChatHistory.class)
+                .where(ChatHistory::getAppId).eq(appId)
+                .and(ChatHistory::getIsCode).eq(1)
+                .and(ChatHistory::getIsDelete).eq(0)
+                .orderBy(ChatHistory::getCodeVersion, false); // 按版本号降序
+
+        List<ChatHistory> codeHistories = chatHistoryService.list(queryWrapper);
+        
+        // 5. 转换为版本VO
+        return codeHistories.stream()
+                .map(history -> convertToVersionVO(history, app))
+                .toList();
+    }
+
+    @Override
+    public AppVersionVO getAppVersion(Long appId, Integer version, User loginUser) {
+        // 1. 参数校验
+        ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用 ID 不能为空");
+        ThrowUtils.throwIf(version == null || version <= 0, ErrorCode.PARAMS_ERROR, "版本号不能为空");
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR, "用户未登录");
+
+        // 2. 查询应用信息
+        App app = this.getById(appId);
+        ThrowUtils.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "应用不存在");
+
+        // 3. 验证权限
+        if (!app.getUserId().equals(loginUser.getId())) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权限查看该应用的版本信息");
+        }
+
+        // 4. 查询特定版本的对话历史
+        QueryWrapper queryWrapper = QueryWrapper.create()
+                .from(ChatHistory.class)
+                .where(ChatHistory::getAppId).eq(appId)
+                .and(ChatHistory::getCodeVersion).eq(version)
+                .and(ChatHistory::getIsCode).eq(1)
+                .and(ChatHistory::getIsDelete).eq(0);
+
+        ChatHistory codeHistory = chatHistoryService.getOne(queryWrapper);
+        ThrowUtils.throwIf(codeHistory == null, ErrorCode.NOT_FOUND_ERROR, "版本不存在");
+
+        return convertToVersionVO(codeHistory, app);
+    }
+
+    @Override
+    public boolean deleteAppVersion(Long appId, Integer version, User loginUser) {
+        // 1. 参数校验
+        ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用 ID 不能为空");
+        ThrowUtils.throwIf(version == null || version <= 0, ErrorCode.PARAMS_ERROR, "版本号不能为空");
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR, "用户未登录");
+
+        // 2. 查询应用信息
+        App app = this.getById(appId);
+        ThrowUtils.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "应用不存在");
+
+        // 3. 验证权限（仅应用创建者可删除版本）
+        if (!app.getUserId().equals(loginUser.getId())) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权限删除该应用的版本");
+        }
+
+        // 4. 检查是否是最后一个版本（至少保留一个版本）
+        long versionCount = chatHistoryService.count(QueryWrapper.create()
+                .from(ChatHistory.class)
+                .where(ChatHistory::getAppId).eq(appId)
+                .and(ChatHistory::getIsCode).eq(1)
+                .and(ChatHistory::getIsDelete).eq(0));
+        
+        if (versionCount <= 1) {
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "不能删除最后一个版本");
+        }
+
+        // 5. 删除对话历史记录
+        QueryWrapper queryWrapper = QueryWrapper.create()
+                .from(ChatHistory.class)
+                .where(ChatHistory::getAppId).eq(appId)
+                .and(ChatHistory::getCodeVersion).eq(version)
+                .and(ChatHistory::getIsCode).eq(1);
+
+        ChatHistory updateEntity = new ChatHistory();
+        updateEntity.setIsDelete(1);
+        updateEntity.setUpdateTime(LocalDateTime.now());
+
+        boolean historyDeleted = chatHistoryService.update(updateEntity, queryWrapper);
+
+        // 6. 删除文件系统中的版本文件
+        if (historyDeleted) {
+            try {
+                String codeGenType = app.getCodeGenType();
+                String versionDirPath = CodeFileConstant.CODE_FILE_PATH + File.separator + 
+                                       codeGenType + "_" + appId + File.separator + version;
+                File versionDir = new File(versionDirPath);
+                if (versionDir.exists()) {
+                    FileUtil.del(versionDir);
+                    log.info("删除版本文件成功：{}", versionDirPath);
+                }
+            } catch (Exception e) {
+                log.warn("删除版本文件失败，但数据库记录已删除：{}", e.getMessage());
+            }
+        }
+
+        return historyDeleted;
+    }
+
+    /**
+     * 将ChatHistory转换为AppVersionVO
+     */
+    private AppVersionVO convertToVersionVO(ChatHistory codeHistory, App app) {
+        AppVersionVO versionVO = new AppVersionVO();
+        versionVO.setVersion(codeHistory.getCodeVersion());
+        versionVO.setCreateTime(codeHistory.getCreateTime());
+        versionVO.setChatHistoryId(codeHistory.getId());
+        
+        // 截取消息内容作为摘要（最多200字符）
+        String message = codeHistory.getMessage();
+        if (message != null && message.length() > 200) {
+            message = message.substring(0, 200) + "...";
+        }
+        versionVO.setMessage(message);
+        
+        // 判断是否为当前部署版本
+        versionVO.setIsDeployed(false); // 暂时设为false，可以后续优化
+        
+        // 设置预览URL
+        versionVO.setPreviewUrl(String.format("/api/static/preview/%d/%d/", app.getId(), codeHistory.getCodeVersion()));
+        
+        // 计算文件大小
+        try {
+            String codeGenType = app.getCodeGenType();
+            String versionDirPath = CodeFileConstant.CODE_FILE_PATH + File.separator + 
+                                   codeGenType + "_" + app.getId() + File.separator + codeHistory.getCodeVersion();
+            File versionDir = new File(versionDirPath);
+            if (versionDir.exists()) {
+                versionVO.setFileSize(calculateDirectorySize(versionDir));
+            } else {
+                versionVO.setFileSize(0L);
+            }
+        } catch (Exception e) {
+            log.warn("计算版本文件大小失败：{}", e.getMessage());
+            versionVO.setFileSize(0L);
+        }
+        
+        return versionVO;
+    }
+
+    /**
+     * 计算目录大小
+     */
+    private long calculateDirectorySize(File directory) {
+        if (!directory.exists() || !directory.isDirectory()) {
+            return 0L;
+        }
+        
+        long size = 0L;
+        File[] files = directory.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isFile()) {
+                    size += file.length();
+                } else if (file.isDirectory()) {
+                    size += calculateDirectorySize(file);
+                }
+            }
+        }
+        return size;
     }
 }

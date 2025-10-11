@@ -8,7 +8,13 @@ import com.zaxxer.hikari.HikariDataSource;
 
 import java.util.Map;
 
+
+
 public class MyBatisFlexCodeGenerate {
+
+    private static final String[] tables = new String[]{
+          "chat_history"
+    };
     public static void main(String[] args) {
         // 用于本地开发
         Dict dict = YamlUtil.loadByPath("application-local.yml");
@@ -38,6 +44,8 @@ public class MyBatisFlexCodeGenerate {
     public static GlobalConfig createGlobalConfigUseStyle2() {
         //创建配置内容
         GlobalConfig globalConfig = new GlobalConfig();
+        // 生成特定的表的代码
+        globalConfig.setGenerateTable(tables);
 
         //设置根包
         globalConfig.getPackageConfig()
