@@ -1,0 +1,47 @@
+/* Global styles for icon display to avoid white borders */
+.icon-container {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.icon-container.rounded {
+  border-radius: 4px;
+}
+
+.icon-container.circle {
+  border-radius: 50%;
+}
+
+/* For Ant Design Vue icons specifically */
+.anticon {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+}
+
+/* For images that should be perfectly rounded */
+.rounded-image {
+  border-radius: 4px;
+  object-fit: cover;
+  overflow: hidden;
+}
+
+/* Ensure no white border issue with SVG icons */
+svg {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  flex-shrink: 0;
+}
+
+/* For icon buttons to avoid white corners */
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
