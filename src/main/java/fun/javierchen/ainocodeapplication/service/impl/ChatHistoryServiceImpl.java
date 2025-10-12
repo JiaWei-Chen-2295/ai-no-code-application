@@ -4,6 +4,10 @@ import cn.hutool.core.collection.CollUtil;
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
+import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import fun.javierchen.ainocodeapplication.constant.UserConstant;
 import fun.javierchen.ainocodeapplication.core.model.CodeParseResult;
 import fun.javierchen.ainocodeapplication.mapper.ChatHistoryMapper;
@@ -294,5 +298,39 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
         updateEntity.setUpdateTime(LocalDateTime.now());
 
         return this.update(updateEntity, queryWrapper);
+    }
+
+    @Override
+    public int loadHistoryToMemory(Long appId, MessageWindowChatMemory chatMemory, int maxCount) {
+        try {
+            QueryWrapper queryWrapper = QueryWrapper.create()
+                    .eq(ChatHistory::getAppId, appId)
+                    .orderBy(ChatHistory::getCreateTime, false)
+                    // 排除最近的用户的历史
+                    .limit(1, maxCount);
+
+            List<ChatHistory> historyList = this.list(queryWrapper);
+            if (CollUtil.isEmpty(historyList)) {
+                return 0;
+            }
+            List<ChatHistory> reversedHistoryList = historyList.reversed();
+            final int[] loadCount = {0};
+            reversedHistoryList.forEach(history -> {
+                if (MessageTypeEnum.AI.getValue().equals(history.getMessageType())) {
+                    chatMemory.add(AiMessage.from(history.getMessage()));
+                    loadCount[0]++;
+                } else if (MessageTypeEnum.USER.getValue().equals(history.getMessageType())) {
+                    chatMemory.add(UserMessage.from(history.getMessage()));
+                    loadCount[0]++;
+                } else {
+                    log.warn("未知的消息类型：{}", history.getMessageType());
+                }
+
+            });
+            return loadCount[0];
+        } catch (Exception e) {
+            log.warn("加载历史数据失败：{}", e.getMessage());
+        }
+        return 0;
     }
 }

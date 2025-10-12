@@ -3,6 +3,7 @@ package fun.javierchen.ainocodeapplication.service;
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.core.service.IService;
+import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import fun.javierchen.ainocodeapplication.core.model.CodeParseResult;
 import fun.javierchen.ainocodeapplication.model.User;
 import fun.javierchen.ainocodeapplication.model.dto.chathistory.ChatHistoryQueryRequest;
@@ -102,4 +103,11 @@ public interface ChatHistoryService extends IService<ChatHistory> {
      * @return 是否删除成功
      */
     boolean deleteChatHistoryByAppId(Long appId);
+
+    /**
+     * 从数据库加载记忆到内存中
+     * @param appId
+     * @return
+     */
+    int loadHistoryToMemory(Long appId, MessageWindowChatMemory chatMemory, int maxCount);
 }

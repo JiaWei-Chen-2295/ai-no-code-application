@@ -7,6 +7,13 @@ spring:
     password: 12345678
   profiles:
     active: local
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password:
+      ttl: 3600
+
 server:
   port: 8081
 # springdoc-openapi项目配置
