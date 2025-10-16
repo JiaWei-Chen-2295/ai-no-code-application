@@ -1,14 +1,14 @@
 package fun.javierchen.ainocodeapplication.ai.model.enums;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
 public enum CodeGenTypeEnum {
     HTML("html", "单文件网页"),
-    MUTI_FILE("mutiFile", "多文件");
+    MUTI_FILE("mutiFile", "多文件"),
+    VUE_PROJECT("vueProject", "vue 工程模式");
 
     private String type;
     private String typeName;

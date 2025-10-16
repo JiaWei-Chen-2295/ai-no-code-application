@@ -37,6 +37,7 @@ public class CodeParseResult {
      */
     private final String parseError;
 
+
     /**
      * 创建成功的解析结果
      */

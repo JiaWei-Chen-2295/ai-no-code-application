@@ -96,4 +96,28 @@ public interface AppService extends IService<App> {
      * @return 是否删除成功
      */
     boolean deleteAppVersion(Long appId, Integer version, User loginUser);
+
+    /**
+     * 为Vue项目复制模板并创建符号链接
+     * 只有Vue项目才使用此方法，其他类型使用原有逻辑
+     *
+     * @param targetPath 目标路径
+     * @return 复制结果信息
+     */
+    String copyVueTemplateWithSymlinks(String targetPath);
+
+    /**
+     * 获取应用的下一个版本号
+     * @param appId 应用ID
+     * @return 下一个版本号
+     */
+    int getNextVersion(Long appId);
+
+    /**
+     * 保存Vue项目（创建项目目录结构）
+     * @param appId 应用ID
+     * @param version 版本号
+     * @return 项目目录
+     */
+    java.io.File saveVueProject(Long appId, int version);
 }

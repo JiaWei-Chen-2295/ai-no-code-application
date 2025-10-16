@@ -41,6 +41,7 @@ public class CodeParserExecutor {
             Object parsedCode = switch (codeGenTypeEnum) {
                 case HTML -> HTML_CODE_PARSER.parserCode(codeContent);
                 case MUTI_FILE -> MUTI_FILE_CODE_PARSER.parserCode(codeContent);
+                case VUE_PROJECT -> null;
             };
             
             // 判断解析结果是否包含有效代码

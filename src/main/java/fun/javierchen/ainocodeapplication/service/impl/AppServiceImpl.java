@@ -25,6 +25,8 @@ import fun.javierchen.ainocodeapplication.service.AppService;
 import fun.javierchen.ainocodeapplication.service.ChatHistoryService;
 import fun.javierchen.ainocodeapplication.service.UserService;
 import fun.javierchen.ainocodeapplication.utils.ThrowUtils;
+import fun.javierchen.ainocodeapplication.utils.TemplateCopyUtil;
+import fun.javierchen.ainocodeapplication.security.DirectorySandboxUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -34,6 +36,10 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -556,5 +562,122 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
             }
         }
         return size;
+    }
+
+    @Override
+    public String copyVueTemplateWithSymlinks(String targetPath) {
+        try {
+            // 验证目标路径
+            if (StringUtils.isBlank(targetPath)) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "目标路径不能为空");
+            }
+
+            // 确保路径安全
+            Path target = Paths.get(targetPath).toAbsolutePath().normalize();
+            
+            // 定义模板路径和共享node_modules路径
+            Path templatePath = Paths.get("front/ai-no-code/template_vue").toAbsolutePath();
+            Path sharedNodeModulesPath = Paths.get("front/ai-no-code/node_modules").toAbsolutePath();
+            
+            log.info("开始为Vue项目复制模板到: {}", target);
+            log.debug("模板路径: {}", templatePath);
+            log.debug("共享node_modules路径: {}", sharedNodeModulesPath);
+            
+            // 使用符号链接复制工具复制Vue模板
+            TemplateCopyUtil.CopyResult result = TemplateCopyUtil.copyVueTemplateWithSharedNodeModules(
+                templatePath.toString(),
+                target.toString(),
+                sharedNodeModulesPath.toString()
+            );
+            
+            // 记录复制结果
+            log.info("Vue模板复制完成: {}", result);
+            
+            // 返回成功信息
+            return String.format("Vue项目模板复制成功！复制文件：%d个，目录：%d个，符号链接：%d个，耗时：%dms",
+                result.getCopiedFiles(),
+                result.getCopiedDirectories(), 
+                result.getCreatedSymlinks(),
+                result.getDuration()
+            );
+            
+        } catch (IOException e) {
+            log.error("Vue模板复制失败: {}", e.getMessage(), e);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "Vue模板复制失败: " + e.getMessage());
+        } catch (Exception e) {
+            log.error("Vue模板复制过程中发生未知错误: {}", e.getMessage(), e);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "Vue模板复制失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public int getNextVersion(Long appId) {
+        try {
+            // 验证参数
+            ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用ID不能为空");
+            
+            // 获取应用的沙箱根目录
+            Path appSandboxRoot = DirectorySandboxUtil.getProjectDirectoryPath(appId);
+            
+            if (!Files.exists(appSandboxRoot)) {
+                return 1; // 如果目录不存在，返回1作为第一个版本
+            }
+            
+            // 查找最大的版本号
+            int maxVersion = Files.list(appSandboxRoot)
+                    .filter(Files::isDirectory)
+                    .map(path -> path.getFileName().toString())
+                    .filter(name -> name.startsWith("v") && name.length() > 1)
+                    .mapToInt(name -> {
+                        try {
+                            return Integer.parseInt(name.substring(1));
+                        } catch (NumberFormatException e) {
+                            return 0;
+                        }
+                    })
+                    .max()
+                    .orElse(0);
+                    
+            return maxVersion + 1;
+            
+        } catch (IOException e) {
+            log.error("获取下一个版本号失败: {}", e.getMessage());
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "获取版本号失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public File saveVueProject(Long appId, int version) {
+        try {
+            // 验证参数
+            ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用ID不能为空");
+            ThrowUtils.throwIf(version <= 0, ErrorCode.PARAMS_ERROR, "版本号必须大于0");
+            
+            // 获取应用的沙箱根目录
+            Path appSandboxRoot = DirectorySandboxUtil.getProjectDirectoryPath(appId);
+            
+            // 在沙箱根目录下创建版本目录
+            Path versionDirectory = appSandboxRoot.resolve("v" + version);
+            
+            // 创建Vue项目目录
+            Path vueProjectDir = versionDirectory.resolve("vue-project");
+            Files.createDirectories(vueProjectDir);
+            
+            // 使用Vue项目符号链接复制方法
+            String result = copyVueTemplateWithSymlinks(vueProjectDir.toString());
+            
+            log.info("Vue项目目录已创建: {} (应用ID: {}, 版本: {}), 结果: {}", 
+                    vueProjectDir.toAbsolutePath(), appId, version, result);
+            
+            // 返回项目根目录
+            return vueProjectDir.toFile();
+
+        } catch (IOException e) {
+            log.error("保存Vue项目失败: {}", e.getMessage(), e);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "保存Vue项目失败: " + e.getMessage());
+        } catch (Exception e) {
+            log.error("保存Vue项目过程中发生未知错误: {}", e.getMessage(), e);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "保存Vue项目失败: " + e.getMessage());
+        }
     }
 }
