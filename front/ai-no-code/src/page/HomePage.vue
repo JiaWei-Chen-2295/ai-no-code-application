@@ -4,7 +4,7 @@
     <div class="hero-section">
       <div class="hero-content">
         <h1 class="main-title">
-          一句话 <span class="ai-icon">🤖</span> 实所想
+          一句话 <Icon icon="mdi:robot-outline" class="ai-icon" /> 实所想
         </h1>
         <p class="subtitle">与 AI 对话，精工细作每个应用</p>
       </div>
@@ -17,27 +17,27 @@
           class="prompt-input" :maxlength="500" show-count />
         <div class="input-actions">
           <div class="left-actions">
-            <a-button class="upload-btn" :icon="h(UploadOutlined)">
-              上传
+            <a-button class="upload-btn">
+              <Icon icon="mdi:upload-outline" class="btn-icon" />
+              <span>上传</span>
             </a-button>
-            <a-button class="optimize-btn" :icon="h(BulbOutlined)">
-              优化
+            <a-button class="optimize-btn">
+              <Icon icon="mdi:auto-fix" class="btn-icon" />
+              <span>优化</span>
             </a-button>
             <a-select v-model:value="codeGenType" class="type-selector" placeholder="选择代码类型">
               <a-select-option value="html">
-                <span class="option-icon">📄</span>
+                <Icon icon="mdi:file-code-outline" class="option-icon" />
                 <span>单文件网页</span>
               </a-select-option>
               <a-select-option value="mutiFile">
-                <span class="option-icon">📁</span>
+                <Icon icon="mdi:folder-multiple-outline" class="option-icon" />
                 <span>多文件项目</span>
               </a-select-option>
             </a-select>
           </div>
           <a-button type="primary" class="generate-btn" @click="createApp" :loading="creating">
-            <template #icon>
-              <span class="go-icon">↗</span>
-            </template>
+            <Icon icon="mdi:arrow-top-right" class="generate-icon" />
           </a-button>
         </div>
       </div>
@@ -94,10 +94,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, h } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { message, Modal } from 'ant-design-vue'
-import { UploadOutlined, BulbOutlined } from '@ant-design/icons-vue'
+import { Icon } from '@iconify/vue'
 import {
   addApp,
   listMyAppVoByPage,
@@ -311,6 +311,18 @@ onMounted(() => {
 .ai-icon {
   font-size: var(--text-5xl);
   margin: 0 var(--spacing-2);
+  color: var(--primary-600);
+  display: inline-block;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
 }
 
 .subtitle {
@@ -379,6 +391,9 @@ onMounted(() => {
   border-radius: var(--radius-lg);
   font-weight: var(--font-medium);
   transition: var(--transition-all);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
 }
 
 .upload-btn:hover,
@@ -386,6 +401,10 @@ onMounted(() => {
   border-color: var(--secondary-600);
   color: var(--secondary-700);
   transform: translateY(-1px);
+}
+
+.btn-icon {
+  font-size: 18px;
 }
 
 /* 类型选择器样式 */
@@ -419,9 +438,21 @@ onMounted(() => {
   gap: var(--spacing-2) !important;
 }
 
+.type-selector :deep(.ant-select-selection-item) {
+  display: flex !important;
+  align-items: center !important;
+  gap: var(--spacing-2) !important;
+}
+
+.type-selector :deep(.ant-select-item) {
+  display: flex !important;
+  align-items: center !important;
+  gap: var(--spacing-2) !important;
+}
+
 .option-icon {
-  font-size: 16px;
-  margin-right: var(--spacing-1);
+  font-size: 18px;
+  opacity: 0.85;
 }
 
 .generate-btn {
@@ -446,9 +477,13 @@ onMounted(() => {
   box-shadow: var(--shadow-lg) !important;
 }
 
-.go-icon {
+.generate-icon {
   font-size: 20px;
-  font-weight: bold;
+  transition: var(--transition-transform);
+}
+
+.generate-btn:hover .generate-icon {
+  transform: translate(2px, -2px);
 }
 
 /* 快捷模板 */

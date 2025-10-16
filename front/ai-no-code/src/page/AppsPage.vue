@@ -1,8 +1,13 @@
 <template>
   <div class="apps-content">
     <div class="content-header">
+      <h2 class="page-title">
+        <Icon icon="mdi:folder-outline" class="title-icon" />
+        <span>我的应用</span>
+      </h2>
       <a-button type="primary" @click="createApp">
-        创建新应用
+        <Icon icon="mdi:plus" class="btn-icon" />
+        <span>创建新应用</span>
       </a-button>
     </div>
 
@@ -40,6 +45,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { message, Modal } from 'ant-design-vue'
+import { Icon } from '@iconify/vue'
 import { listMyAppVoByPage, deleteMyApp as deleteAppApi } from '@/api/appController'
 
 const router = useRouter()

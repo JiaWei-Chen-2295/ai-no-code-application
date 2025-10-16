@@ -4,33 +4,36 @@
             <div class="app-cover">
                 <img v-if="app.cover" :src="app.cover" :alt="app.appName" class="cover-image" />
                 <div v-else class="default-cover">
-                    <div class="app-icon">📱</div>
-                    <div class="app-type-badge">{{ getCodeGenTypeLabel(app.codeGenType) }}</div>
+                    <Icon :icon="app.codeGenType === 'html' ? 'mdi:file-code' : 'mdi:folder-multiple'" class="app-icon" />
+                    <div class="app-type-badge">
+                        <Icon :icon="app.codeGenType === 'html' ? 'mdi:language-html5' : 'mdi:folder-open'" class="badge-icon" />
+                        <span>{{ getCodeGenTypeLabel(app.codeGenType) }}</span>
+                    </div>
                 </div>
             </div>
         </template>
 
         <template #actions v-if="!featured">
             <a-tooltip title="查看应用">
-                <EyeOutlined @click="$emit('view', app)" />
+                <Icon icon="mdi:eye-outline" class="action-icon" @click="$emit('view', app)" />
             </a-tooltip>
             <a-tooltip title="编辑应用">
-                <EditOutlined @click="$emit('edit', app)" />
+                <Icon icon="mdi:pencil-outline" class="action-icon" @click="$emit('edit', app)" />
             </a-tooltip>
             <a-tooltip title="删除应用">
-                <DeleteOutlined @click="$emit('delete', app)" />
+                <Icon icon="mdi:delete-outline" class="action-icon delete-icon" @click="$emit('delete', app)" />
             </a-tooltip>
         </template>
 
         <template #actions v-else>
             <a-tooltip title="查看详情">
-                <EyeOutlined @click="$emit('view', app)" />
+                <Icon icon="mdi:eye-outline" class="action-icon" @click="$emit('view', app)" />
             </a-tooltip>
             <a-tooltip title="创建者">
-                <UserOutlined />
+                <Icon icon="mdi:account-outline" class="action-icon" />
             </a-tooltip>
             <a-tooltip title="点赞">
-                <HeartOutlined />
+                <Icon icon="mdi:heart-outline" class="action-icon" />
             </a-tooltip>
         </template>
 
@@ -42,20 +45,20 @@
                 <span v-if="featured && app.user" class="app-author">by {{ app.user.name || app.user.account }}</span>
             </div>
             <div class="app-time">{{ formatTime(app.createTime) }}</div>
-            <div v-if="app.deployKey" class="app-status deployed">已部署</div>
-            <div v-else class="app-status draft">草稿</div>
+            <div v-if="app.deployKey" class="app-status deployed">
+                <Icon icon="mdi:check-circle" class="status-icon" />
+                <span>已部署</span>
+            </div>
+            <div v-else class="app-status draft">
+                <Icon icon="mdi:file-document-edit-outline" class="status-icon" />
+                <span>草稿</span>
+            </div>
         </div>
     </a-card>
 </template>
 
 <script setup lang="ts">
-import {
-    EyeOutlined,
-    EditOutlined,
-    DeleteOutlined,
-    UserOutlined,
-    HeartOutlined
-} from '@ant-design/icons-vue'
+import { Icon } from '@iconify/vue'
 
 interface Props {
     app: API.AppVO
@@ -168,23 +171,32 @@ const formatTime = (time?: string) => {
 }
 
 .app-icon {
-    font-size: 48px;
+    font-size: 56px;
     color: white;
     z-index: 1;
     position: relative;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
     margin-bottom: var(--spacing-2);
+    opacity: 0.95;
 }
 
 .app-type-badge {
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.95);
     color: var(--primary-600);
-    padding: var(--spacing-1) var(--spacing-2);
+    padding: var(--spacing-1) var(--spacing-3);
     border-radius: var(--radius-md);
     font-size: var(--text-xs);
     font-weight: var(--font-semibold);
     z-index: 1;
     position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-1);
+    backdrop-filter: blur(10px);
+}
+
+.badge-icon {
+    font-size: 14px;
 }
 
 /* 卡片内容 */
@@ -243,11 +255,18 @@ const formatTime = (time?: string) => {
 
 .app-status {
     font-size: var(--text-xs);
-    padding: 2px var(--spacing-2);
+    padding: 3px var(--spacing-2);
     border-radius: var(--radius-md);
     font-weight: var(--font-medium);
     text-align: center;
-    min-width: 50px;
+    min-width: 60px;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-1);
+}
+
+.status-icon {
+    font-size: 14px;
 }
 
 .app-status.deployed {
@@ -267,20 +286,20 @@ const formatTime = (time?: string) => {
     padding: var(--spacing-2) 0 !important;
 }
 
-.app-card :deep(.ant-card-actions .anticon) {
-    color: var(--secondary-600) !important;
-    font-size: 16px !important;
-    transition: var(--transition-colors) !important;
-    cursor: pointer !important;
+.action-icon {
+    color: var(--gray-600);
+    font-size: 20px;
+    transition: var(--transition-all);
+    cursor: pointer;
 }
 
-.app-card :deep(.ant-card-actions .anticon:hover) {
-    color: var(--primary-600) !important;
-    transform: scale(1.1);
+.action-icon:hover {
+    color: var(--primary-600);
+    transform: scale(1.15);
 }
 
-.app-card :deep(.ant-card-actions li:last-child .anticon:hover) {
-    color: var(--error-600) !important;
+.delete-icon:hover {
+    color: var(--error-500);
 }
 
 /* 响应式设计 */

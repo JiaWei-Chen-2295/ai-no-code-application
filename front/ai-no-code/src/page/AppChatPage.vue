@@ -4,26 +4,36 @@
         <div class="chat-header">
             <div class="header-left">
                 <a-button type="text" @click="goBack" class="back-btn">
-                    <ArrowLeftOutlined />
+                    <Icon icon="mdi:arrow-left" class="back-icon" />
                 </a-button>
                 <div class="app-info">
-                    <h2 class="app-name">{{ app?.appName || '加载中...' }}</h2>
-                    <span class="app-type">{{ getCodeGenTypeLabel(app?.codeGenType) }}</span>
+                    <h2 class="app-name">
+                        <Icon :icon="app?.codeGenType === 'html' ? 'mdi:file-code-outline' : 'mdi:folder-multiple-outline'" class="app-icon" />
+                        {{ app?.appName || '加载中...' }}
+                    </h2>
+                    <span class="app-type">
+                        <Icon icon="mdi:tag-outline" class="type-icon" />
+                        {{ getCodeGenTypeLabel(app?.codeGenType) }}
+                    </span>
                 </div>
             </div>
             <div class="header-right">
                 <div class="version-selector" v-if="versions.length > 0">
-                    <a-select v-model:value="selectedVersion" @change="handleVersionChange" style="width: 120px">
-                        <a-select-option value="latest">最新版本</a-select-option>
+                    <a-select v-model:value="selectedVersion" @change="handleVersionChange" style="width: 140px">
+                        <a-select-option value="latest">
+                            <Icon icon="mdi:update" class="version-icon" />
+                            <span>最新版本</span>
+                        </a-select-option>
                         <a-select-option v-for="version in versions" :key="version.version" :value="version.version">
-                            版本 {{ version.version }}
+                            <Icon icon="mdi:source-branch" class="version-icon" />
+                            <span>版本 {{ version.version }}</span>
                         </a-select-option>
                     </a-select>
                 </div>
                 <a-button type="primary" @click="deployApp" :loading="deploying" :disabled="!app || !isGenerated"
                     class="deploy-btn">
-                    <CloudUploadOutlined />
-                    部署应用
+                    <Icon icon="mdi:cloud-upload-outline" class="deploy-icon" />
+                    <span>部署应用</span>
                 </a-button>
             </div>
         </div>
@@ -36,8 +46,8 @@
                     <!-- 加载更多按钮 -->
                     <div v-if="hasMoreHistory" class="load-more-container">
                         <a-button @click="loadMoreHistory" :loading="loadingHistory" class="load-more-btn">
-                            <UpOutlined />
-                            加载更多历史消息
+                            <Icon icon="mdi:chevron-up" class="load-icon" />
+                            <span>加载更多历史消息</span>
                         </a-button>
                     </div>
                     
@@ -46,10 +56,10 @@
                         :class="{ 'user-message': message.role === 'user', 'ai-message': message.role === 'assistant' }">
                         <div class="message-avatar">
                             <div v-if="message.role === 'user'" class="user-avatar">
-                                <UserOutlined />
+                                <Icon icon="mdi:account" />
                             </div>
                             <div v-else class="ai-avatar">
-                                🤖
+                                <Icon icon="mdi:robot-outline" />
                             </div>
                         </div>
                         <div class="message-content">
@@ -65,7 +75,9 @@
                     <!-- 正在输入指示器 -->
                     <div v-if="isStreaming" class="message-item ai-message">
                         <div class="message-avatar">
-                            <div class="ai-avatar">🤖</div>
+                            <div class="ai-avatar">
+                                <Icon icon="mdi:robot-outline" />
+                            </div>
                         </div>
                         <div class="message-content">
                             <div class="typing-indicator">
@@ -85,7 +97,7 @@
                             :disabled="isStreaming" />
                         <a-button type="primary" @click="sendMessage" :loading="isStreaming"
                             :disabled="!currentMessage.trim()" class="send-btn">
-                            <SendOutlined />
+                            <Icon icon="mdi:send" class="send-icon" />
                         </a-button>
                     </div>
                 </div>
@@ -97,19 +109,19 @@
                     <h3>生成预览</h3>
                     <div class="preview-actions">
                         <a-button v-if="previewUrl" @click="openInNewTab" size="small">
-                            <LinkOutlined />
-                            新窗口打开
+                            <Icon icon="mdi:open-in-new" class="action-icon" />
+                            <span>新窗口打开</span>
                         </a-button>
                         <a-button @click="refreshPreview" size="small" :loading="refreshing">
-                            <ReloadOutlined />
-                            刷新
+                            <Icon icon="mdi:refresh" class="action-icon" />
+                            <span>刷新</span>
                         </a-button>
                     </div>
                 </div>
                 <div class="preview-content">
                     <div v-if="!isGenerated && messages.length === 0" class="preview-placeholder">
                         <div class="placeholder-content">
-                            <div class="placeholder-icon">🎨</div>
+                            <Icon icon="mdi:palette-outline" class="placeholder-icon" />
                             <h4>开始对话，生成你的应用</h4>
                             <p>在左侧输入你的需求，AI 将为你生成应用代码</p>
                         </div>
@@ -124,7 +136,7 @@
                     </div>
                     <div v-else class="preview-error">
                         <div class="error-content">
-                            <div class="error-icon">⚠️</div>
+                            <Icon icon="mdi:alert-circle-outline" class="error-icon" />
                             <h4>预览暂不可用</h4>
                             <p v-if="messages.length < 2">请与 AI 对话至少 2 轮生成应用代码</p>
                             <p v-else>请继续与 AI 对话优化你的应用</p>
@@ -143,15 +155,7 @@ import { message } from 'ant-design-vue'
 import { marked } from 'marked'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github-dark.css'
-import {
-    ArrowLeftOutlined,
-    CloudUploadOutlined,
-    UserOutlined,
-    SendOutlined,
-    LinkOutlined,
-    ReloadOutlined,
-    UpOutlined
-} from '@ant-design/icons-vue'
+import { Icon } from '@iconify/vue'
 import { getAppVoById, deployApp as deployAppApi, getAppVersions } from '@/api/appController'
 import { listAppChatHistory } from '@/api/chatHistoryController'
 import { useUserStore } from '@/stores/userStore'
@@ -196,8 +200,56 @@ const typingBuffer = ref('') // 待输出的完整内容
 const typingTimer = ref<number | null>(null) // 打字计时器
 const typingSpeed = ref(30) // 打字速度(ms)，越小越快
 
+// 全局函数：复制代码到剪贴板
+const setupGlobalFunctions = () => {
+    // 复制代码功能
+    (window as unknown as { copyCodeToClipboard: Function }).copyCodeToClipboard = async (button: HTMLElement) => {
+        try {
+            const code = button.getAttribute('data-code') || ''
+            // 解码HTML实体
+            const decodedCode = code
+                .replace(/&amp;/g, "&")
+                .replace(/&lt;/g, "<")
+                .replace(/&gt;/g, ">")
+                .replace(/&quot;/g, '"')
+                .replace(/&#039;/g, "'");
+            
+            await navigator.clipboard.writeText(decodedCode)
+            
+            // 视觉反馈
+            const originalText = button.innerHTML
+            button.innerHTML = '<span class="copy-icon">✅</span>'
+            button.style.color = '#22c55e'
+            
+            setTimeout(() => {
+                button.innerHTML = originalText
+                button.style.color = ''
+            }, 2000)
+        } catch (err) {
+            console.error('复制失败:', err)
+            // 降级方案：选中文本
+            const code = button.getAttribute('data-code') || ''
+            const textArea = document.createElement('textarea')
+            textArea.value = code
+            document.body.appendChild(textArea)
+            textArea.select()
+            document.execCommand('copy')
+            document.body.removeChild(textArea)
+        }
+    }
+    
+    // 折叠代码块功能
+    (window as unknown as { toggleCodeBlock: Function }).toggleCodeBlock = (button: HTMLElement) => {
+        const wrapper = button.closest('.code-block-wrapper')
+        if (wrapper) {
+            wrapper.classList.toggle('collapsed')
+        }
+    }
+}
+
 // 页面初始化
 onMounted(async () => {
+    setupGlobalFunctions()
     await userStore.fetchLoginUser()
     await loadApp()
     await loadVersions()
@@ -385,7 +437,10 @@ const streamChat = async (userMessage: string) => {
                     aiMessageObj.content = aiMessage
                     clearTypingEffect()
                 }
-                updatePreviewUrl()
+                // 重新加载版本列表，获取最新版本
+                loadVersions().then(() => {
+                    updatePreviewUrl()
+                })
                 return
             }
 
@@ -473,10 +528,30 @@ const updatePreviewUrl = () => {
 
     const baseUrl = 'http://localhost:8081'
     if (selectedVersion.value === 'latest') {
-        previewUrl.value = `${baseUrl}/api/static/preview/${app.value.id}/`
+        // 获取最新版本号
+        const latestVersion = getLatestVersion()
+        if (latestVersion) {
+            previewUrl.value = `${baseUrl}/api/static/preview/${app.value.id}/${latestVersion}/`
+        } else {
+            // 如果没有版本号，使用默认路径
+            previewUrl.value = `${baseUrl}/api/static/preview/${app.value.id}/`
+        }
     } else {
         previewUrl.value = `${baseUrl}/api/static/preview/${app.value.id}/${selectedVersion.value}/`
     }
+}
+
+// 获取最新版本号
+const getLatestVersion = () => {
+    if (versions.value.length === 0) return null
+    
+    // 版本列表应该已经按版本号排序，第一个就是最新的
+    // 如果需要确保获取最大版本号，可以进行排序
+    const sortedVersions = [...versions.value].sort((a, b) => {
+        return (b.version || 0) - (a.version || 0)
+    })
+    
+    return sortedVersions[0]?.version || null
 }
 
 // 刷新预览
@@ -523,92 +598,158 @@ const renderContent = (content: string) => {
     // HTML单文件类型：检测完整HTML代码
     if (codeGenType === 'html') {
         if (content.includes('<!DOCTYPE') || content.includes('<html')) {
-            // 这是完整的HTML代码，使用代码块展示
-            return renderHtmlCodeBlock(content)
+            // 这是完整的HTML代码，使用代码块展示（不执行）
+            return renderSafeHtmlCodeBlock(content)
         }
     }
     
-    // 多文件类型：使用Markdown渲染（支持多个代码块）
+    // 多文件类型：使用安全的Markdown渲染
     if (codeGenType === 'mutiFile') {
-        // 多文件类型AI会用Markdown格式返回多个文件
-        return renderMarkdown(content)
+        return renderSafeMarkdown(content)
     }
     
-    // 其他情况也使用Markdown渲染
-    return renderMarkdown(content)
+    // 其他情况也使用安全的Markdown渲染
+    return renderSafeMarkdown(content)
 }
 
-// 渲染HTML代码块
-const renderHtmlCodeBlock = (htmlContent: string) => {
+// 安全渲染HTML代码块（防止执行）
+const renderSafeHtmlCodeBlock = (htmlContent: string) => {
+    // HTML转义函数
+    const escapeHtml = (unsafe: string) => {
+        return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+    
     try {
         const highlighted = hljs.highlight(htmlContent, { language: 'html' }).value
-        return `<div class="code-block-wrapper">
+        const lineCount = htmlContent.split('\n').length
+        const sizeKB = Math.round(htmlContent.length / 1024 * 10) / 10
+        const escapedForAttribute = escapeHtml(htmlContent)
+        
+        return `<div class="code-block-wrapper streaming-code">
             <div class="code-block-header">
-                <span class="code-language">HTML</span>
-                <button class="code-toggle-btn" onclick="this.parentElement.parentElement.classList.toggle('collapsed')">
-                    <span class="toggle-icon">▼</span>
-                </button>
+                <div class="header-left">
+                    <span class="code-language">HTML</span>
+                    <span class="line-count">${lineCount} 行</span>
+                    ${htmlContent.length > 500 ? `<span class="size-indicator">${sizeKB}KB</span>` : ''}
+                </div>
+                <div class="header-actions">
+                    <button class="code-copy-btn" onclick="copyCodeToClipboard(this)" data-code="${escapedForAttribute}" title="复制代码">
+                        <span class="copy-icon">📋</span>
+                    </button>
+                    <button class="code-toggle-btn" onclick="toggleCodeBlock(this)" title="折叠/展开">
+                        <span class="toggle-icon">▼</span>
+                    </button>
+                </div>
             </div>
             <div class="code-block-content">
                 <pre><code class="hljs language-html">${highlighted}</code></pre>
             </div>
         </div>`
     } catch {
-        return `<pre><code>${htmlContent}</code></pre>`
+        const escapedContent = escapeHtml(htmlContent)
+        return `<div class="simple-code-block">
+            <div class="simple-header">
+                <span>HTML代码</span>
+                <button onclick="copyCodeToClipboard(this)" data-code="${escapedContent}">复制</button>
+            </div>
+            <pre><code>${escapedContent}</code></pre>
+        </div>`
     }
 }
 
-// 渲染Markdown内容
-const renderMarkdown = (content: string) => {
+// 安全渲染Markdown内容（防止代码执行）
+const renderSafeMarkdown = (content: string) => {
     if (!content) return ''
     
     // 配置marked选项
     marked.setOptions({
-        breaks: true, // 支持换行
-        gfm: true // 支持GitHub风格的Markdown
+        breaks: true,
+        gfm: true
     })
     
-    // 自定义渲染器以支持代码高亮和折叠
+    // 自定义渲染器
     const renderer = new marked.Renderer()
+    
+    // 安全渲染代码块
     renderer.code = function({ text, lang }: { text: string, lang?: string }) {
-            // 使用highlight.js进行语法高亮
-            if (lang && hljs.getLanguage(lang)) {
-                try {
-                    const highlighted = hljs.highlight(text, { language: lang }).value
-                    // 包装代码块，添加折叠功能
-                    return `<div class="code-block-wrapper">
-                        <div class="code-block-header">
-                            <span class="code-language">${lang}</span>
-                            <button class="code-toggle-btn" onclick="this.parentElement.parentElement.classList.toggle('collapsed')">
+        const lineCount = text.split('\n').length
+        const isLargeCode = lineCount > 20 || text.length > 1000
+        const sizeKB = Math.round(text.length / 1024 * 10) / 10
+        
+        // HTML转义函数
+        const escapeHtml = (unsafe: string) => {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+        
+        const escapedText = escapeHtml(text)
+        
+        // 使用highlight.js进行语法高亮
+        if (lang && hljs.getLanguage(lang)) {
+            try {
+                const highlighted = hljs.highlight(text, { language: lang }).value
+                return `<div class="code-block-wrapper ${isLargeCode ? 'large-code' : ''}">
+                    <div class="code-block-header">
+                        <div class="header-left">
+                            <span class="code-language">${lang.toUpperCase()}</span>
+                            <span class="line-count">${lineCount} 行</span>
+                            ${text.length > 500 ? `<span class="size-indicator">${sizeKB}KB</span>` : ''}
+                        </div>
+                        <div class="header-actions">
+                            <button class="code-copy-btn" onclick="copyCodeToClipboard(this)" data-code="${escapedText}" title="复制代码">
+                                <span class="copy-icon">📋</span>
+                            </button>
+                            <button class="code-toggle-btn" onclick="toggleCodeBlock(this)" title="折叠/展开">
                                 <span class="toggle-icon">▼</span>
                             </button>
                         </div>
-                        <div class="code-block-content">
-                            <pre><code class="hljs language-${lang}">${highlighted}</code></pre>
-                        </div>
-                    </div>`
-                } catch {
-                    // 高亮失败，使用原始渲染
-                }
-            }
-            // 自动检测语言
-            try {
-                const highlighted = hljs.highlightAuto(text).value
-                return `<div class="code-block-wrapper">
-                    <div class="code-block-header">
-                        <span class="code-language">代码</span>
-                        <button class="code-toggle-btn" onclick="this.parentElement.parentElement.classList.toggle('collapsed')">
-                            <span class="toggle-icon">▼</span>
-                        </button>
                     </div>
                     <div class="code-block-content">
-                        <pre><code class="hljs">${highlighted}</code></pre>
+                        <pre><code class="hljs language-${lang}">${highlighted}</code></pre>
                     </div>
                 </div>`
             } catch {
-                return `<pre><code>${text}</code></pre>`
+                return `<div class="simple-code-block"><pre><code>${escapedText}</code></pre></div>`
             }
         }
+        
+        // 自动检测语言
+        try {
+            const highlighted = hljs.highlightAuto(text).value
+            const detectedLang = hljs.highlightAuto(text).language || '代码'
+            return `<div class="code-block-wrapper ${isLargeCode ? 'large-code' : ''}">
+                <div class="code-block-header">
+                    <div class="header-left">
+                        <span class="code-language">${detectedLang.toUpperCase()}</span>
+                        <span class="line-count">${lineCount} 行</span>
+                        ${text.length > 500 ? `<span class="size-indicator">${sizeKB}KB</span>` : ''}
+                    </div>
+                    <div class="header-actions">
+                        <button class="code-copy-btn" onclick="copyCodeToClipboard(this)" data-code="${escapedText}" title="复制代码">
+                            <span class="copy-icon">📋</span>
+                        </button>
+                        <button class="code-toggle-btn" onclick="toggleCodeBlock(this)" title="折叠/展开">
+                            <span class="toggle-icon">▼</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="code-block-content">
+                    <pre><code class="hljs">${highlighted}</code></pre>
+                </div>
+            </div>`
+        } catch {
+            return `<div class="simple-code-block"><pre><code>${escapedText}</code></pre></div>`
+        }
+    }
     
     return marked(content, { renderer })
 }
@@ -721,6 +862,10 @@ const loadVersions = async () => {
         const res = await getAppVersions({ appId: app.value.id!.toString() })
         if (res.data.code === 0 && res.data.data) {
             versions.value = res.data.data
+            // 加载版本后，如果当前是latest，更新预览URL以使用最新版本号
+            if (selectedVersion.value === 'latest' && versions.value.length > 0) {
+                updatePreviewUrl()
+            }
         }
     } catch (error) {
         console.error('加载版本列表失败:', error)
@@ -770,7 +915,7 @@ const getCodeGenTypeLabel = (type?: string) => {
 }
 
 .back-btn {
-    color: var(--secondary-600);
+    color: var(--gray-600);
     font-size: 18px;
     padding: var(--spacing-2);
     border-radius: var(--radius-lg);
@@ -778,8 +923,12 @@ const getCodeGenTypeLabel = (type?: string) => {
 }
 
 .back-btn:hover {
-    background: var(--secondary-100);
-    color: var(--secondary-700);
+    background: var(--gray-100);
+    color: var(--primary-600);
+}
+
+.back-icon {
+    font-size: 20px;
 }
 
 .app-info {
@@ -793,6 +942,14 @@ const getCodeGenTypeLabel = (type?: string) => {
     font-size: var(--text-xl);
     font-weight: var(--font-semibold);
     color: var(--deep-600);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+}
+
+.app-icon {
+    font-size: 22px;
+    color: var(--primary-600);
 }
 
 .app-type {
@@ -801,8 +958,15 @@ const getCodeGenTypeLabel = (type?: string) => {
     background: var(--secondary-100);
     padding: 2px var(--spacing-2);
     border-radius: var(--radius-md);
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-1);
     width: fit-content;
+}
+
+.type-icon {
+    font-size: 14px;
+    opacity: 0.8;
 }
 
 .header-right {
@@ -826,6 +990,11 @@ const getCodeGenTypeLabel = (type?: string) => {
     border-color: var(--primary-500) !important;
 }
 
+.version-icon {
+    font-size: 16px;
+    margin-right: var(--spacing-1);
+}
+
 .deploy-btn {
     background: var(--success-500) !important;
     border-color: var(--success-500) !important;
@@ -836,6 +1005,10 @@ const getCodeGenTypeLabel = (type?: string) => {
     align-items: center !important;
     gap: var(--spacing-2) !important;
     transition: var(--transition-all) !important;
+}
+
+.deploy-icon {
+    font-size: 18px;
 }
 
 .deploy-btn:hover {
@@ -1058,16 +1231,31 @@ const getCodeGenTypeLabel = (type?: string) => {
     transition: var(--transition-all) !important;
 }
 
+.send-icon {
+    font-size: 18px;
+    transition: var(--transition-transform);
+}
+
 .send-btn:hover {
     background: var(--primary-700) !important;
     border-color: var(--primary-700) !important;
     transform: scale(1.05) !important;
 }
 
+.send-btn:hover .send-icon {
+    transform: translateX(2px);
+}
+
 .send-btn:disabled {
     background: var(--gray-400) !important;
     border-color: var(--gray-400) !important;
     transform: none !important;
+}
+
+.load-icon,
+.action-icon {
+    font-size: 16px;
+    margin-right: var(--spacing-1);
 }
 
 /* 右侧预览面板 */
@@ -1122,6 +1310,8 @@ const getCodeGenTypeLabel = (type?: string) => {
 .error-icon {
     font-size: 64px;
     margin-bottom: var(--spacing-4);
+    color: var(--gray-400);
+    opacity: 0.8;
 }
 
 .preview-placeholder h4,
@@ -1276,30 +1466,86 @@ const getCodeGenTypeLabel = (type?: string) => {
     color: inherit;
 }
 
-/* 代码块包装器样式 */
+/* 代码块包装器样式 - 优化流式输出显示 */
 .markdown-content :deep(.code-block-wrapper) {
     margin: 1em 0;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     overflow: hidden;
-    border: 1px solid var(--secondary-300);
+    border: 1px solid #30363d;
     background: #0d1117;
     transition: var(--transition-all);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.markdown-content :deep(.code-block-wrapper.streaming-code) {
+    border: 2px solid var(--primary-500);
+    box-shadow: 0 0 0 3px rgba(74, 157, 117, 0.1);
+}
+
+.markdown-content :deep(.code-block-wrapper.large-code) {
+    border-color: var(--warning-500);
 }
 
 .markdown-content :deep(.code-block-header) {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: var(--spacing-2) var(--spacing-3);
+    padding: var(--spacing-3) var(--spacing-4);
     background: #161b22;
     border-bottom: 1px solid #30363d;
 }
 
+.markdown-content :deep(.header-left) {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3);
+}
+
+.markdown-content :deep(.header-actions) {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+}
+
 .markdown-content :deep(.code-language) {
     font-size: var(--text-sm);
-    font-weight: var(--font-semibold);
+    font-weight: var(--font-bold);
     color: #58a6ff;
-    text-transform: uppercase;
+    background: rgba(88, 166, 255, 0.1);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+}
+
+.markdown-content :deep(.line-count) {
+    font-size: var(--text-xs);
+    color: #8b949e;
+    background: #21262d;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+}
+
+.markdown-content :deep(.size-indicator) {
+    font-size: var(--text-xs);
+    color: #f85149;
+    background: rgba(248, 81, 73, 0.1);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+}
+
+.markdown-content :deep(.code-copy-btn) {
+    background: transparent;
+    border: none;
+    color: #8b949e;
+    cursor: pointer;
+    padding: var(--spacing-1);
+    border-radius: var(--radius-sm);
+    transition: var(--transition-all);
+    font-size: 14px;
+}
+
+.markdown-content :deep(.code-copy-btn:hover) {
+    background: #30363d;
+    color: #58a6ff;
 }
 
 .markdown-content :deep(.code-toggle-btn) {
@@ -1307,11 +1553,9 @@ const getCodeGenTypeLabel = (type?: string) => {
     border: none;
     color: #8b949e;
     cursor: pointer;
-    padding: var(--spacing-1) var(--spacing-2);
+    padding: var(--spacing-1);
     border-radius: var(--radius-sm);
     transition: var(--transition-all);
-    display: flex;
-    align-items: center;
     font-size: 14px;
 }
 
@@ -1329,11 +1573,19 @@ const getCodeGenTypeLabel = (type?: string) => {
     transform: rotate(-90deg);
 }
 
+/* 代码内容区域 - 适应流式输出 */
 .markdown-content :deep(.code-block-content) {
-    max-height: 500px;
-    overflow-y: auto;
+    max-height: none;
     overflow-x: auto;
+    overflow-y: visible;
     transition: max-height 0.3s ease, opacity 0.3s ease;
+    position: relative;
+}
+
+/* 大型代码块的特殊处理 */
+.markdown-content :deep(.code-block-wrapper.large-code .code-block-content) {
+    max-height: 400px;
+    overflow-y: auto;
 }
 
 .markdown-content :deep(.code-block-wrapper.collapsed .code-block-content) {
@@ -1344,16 +1596,70 @@ const getCodeGenTypeLabel = (type?: string) => {
 
 .markdown-content :deep(.code-block-content pre) {
     margin: 0;
-    padding: var(--spacing-3);
+    padding: var(--spacing-4);
     background: #0d1117;
     border: none;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .markdown-content :deep(.code-block-content code) {
-    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-    font-size: 0.9em;
-    line-height: 1.5;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', monospace;
+    font-size: 0.85em;
+    line-height: 1.6;
     color: #c9d1d9;
+    display: block;
+}
+
+/* 简单代码块样式 */
+.markdown-content :deep(.simple-code-block) {
+    margin: 1em 0;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 1px solid var(--gray-300);
+    background: #f6f8fa;
+}
+
+.markdown-content :deep(.simple-header) {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-2) var(--spacing-3);
+    background: #f1f3f4;
+    border-bottom: 1px solid var(--gray-300);
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--gray-700);
+}
+
+.markdown-content :deep(.simple-header button) {
+    background: transparent;
+    border: none;
+    color: var(--gray-600);
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+    transition: var(--transition-all);
+}
+
+.markdown-content :deep(.simple-header button:hover) {
+    background: var(--gray-200);
+    color: var(--primary-600);
+}
+
+.markdown-content :deep(.simple-code-block pre) {
+    margin: 0;
+    padding: var(--spacing-3);
+    background: #f6f8fa;
+    color: var(--gray-800);
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 0.85em;
+    line-height: 1.5;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
 }
 
 /* 代码块滚动条样式 */

@@ -5,17 +5,24 @@
             <div class="page-header">
                 <div class="header-left">
                     <a-button type="text" @click="goBack" class="back-btn">
-                        <ArrowLeftOutlined />
+                        <Icon icon="mdi:arrow-left" />
                     </a-button>
                     <div class="page-title">
-                        <h1>编辑应用</h1>
+                        <h1>
+                            <Icon icon="mdi:pencil" class="title-icon" />
+                            <span>编辑应用</span>
+                        </h1>
                         <p>{{ isAdmin ? '管理员编辑模式' : '编辑我的应用' }}</p>
                     </div>
                 </div>
                 <div class="header-actions">
-                    <a-button @click="goBack">取消</a-button>
+                    <a-button @click="goBack">
+                        <Icon icon="mdi:close" class="btn-icon" />
+                        <span>取消</span>
+                    </a-button>
                     <a-button type="primary" @click="handleSubmit" :loading="saving">
-                        保存修改
+                        <Icon icon="mdi:content-save" class="btn-icon" />
+                        <span>保存修改</span>
                     </a-button>
                 </div>
             </div>
@@ -135,11 +142,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { message } from 'ant-design-vue'
 import type { FormInstance } from 'ant-design-vue'
-import {
-    ArrowLeftOutlined,
-    CheckCircleOutlined,
-    ExclamationCircleOutlined
-} from '@ant-design/icons-vue'
+import { Icon } from '@iconify/vue'
 import {
     getAppVoById,
     updateMyApp,

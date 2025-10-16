@@ -2,31 +2,53 @@
   <div id="userRegisterPage">
     <div class="register-container">
       <div class="register-form">
-        <h2 class="title">AppCraft - 用户注册</h2>
-        <div class="desc">不写一行代码，生成完整应用</div>
+        <div class="form-header">
+          <Icon icon="mdi:application-brackets" class="form-logo-icon" />
+          <h2 class="title">AppCraft</h2>
+        </div>
+        <div class="desc">
+          <Icon icon="mdi:account-plus-outline" class="desc-icon" />
+          <span>创建账号，开启AI应用之旅</span>
+        </div>
         <a-form :model="formState" name="basic" autocomplete="off" @finish="handleSubmit">
           <a-form-item name="userAccount" :rules="[{ required: true, message: '请输入账号' }]">
-            <a-input v-model:value="formState.userAccount" placeholder="请输入账号" />
+            <a-input v-model:value="formState.userAccount" placeholder="请输入账号">
+              <template #prefix>
+                <Icon icon="mdi:account-outline" class="input-icon" />
+              </template>
+            </a-input>
           </a-form-item>
           <a-form-item name="userPassword" :rules="[
             { required: true, message: '请输入密码' },
             { min: 8, message: '密码不能小于 8 位' },
           ]">
-            <a-input-password v-model:value="formState.userPassword" placeholder="请输入密码" />
+            <a-input-password v-model:value="formState.userPassword" placeholder="请输入密码">
+              <template #prefix>
+                <Icon icon="mdi:lock-outline" class="input-icon" />
+              </template>
+            </a-input-password>
           </a-form-item>
           <a-form-item name="checkPassword" :rules="[
             { required: true, message: '请确认密码' },
             { min: 8, message: '密码不能小于 8 位' },
             { validator: validateCheckPassword },
           ]">
-            <a-input-password v-model:value="formState.checkPassword" placeholder="请确认密码" />
+            <a-input-password v-model:value="formState.checkPassword" placeholder="请确认密码">
+              <template #prefix>
+                <Icon icon="mdi:lock-check-outline" class="input-icon" />
+              </template>
+            </a-input-password>
           </a-form-item>
           <div class="tips">
-            已有账号？
+            <Icon icon="mdi:information-outline" class="tips-icon" />
+            <span>已有账号？</span>
             <RouterLink to="/user/login">去登录</RouterLink>
           </div>
           <a-form-item>
-            <a-button type="primary" html-type="submit" style="width: 100%">注册</a-button>
+            <a-button type="primary" html-type="submit" style="width: 100%">
+              <Icon icon="mdi:account-plus" class="btn-icon" />
+              <span>注册</span>
+            </a-button>
           </a-form-item>
         </a-form>
       </div>
@@ -39,6 +61,7 @@ import { useRouter } from 'vue-router'
 import { userRegister } from '@/api/userController'
 import { message } from 'ant-design-vue'
 import { reactive } from 'vue'
+import { Icon } from '@iconify/vue'
 
 const router = useRouter()
 
@@ -138,9 +161,22 @@ const handleSubmit = async (values: API.UserRegisterRequest) => {
   background: linear-gradient(90deg, var(--secondary-600), var(--primary-600), var(--accent-500));
 }
 
+.form-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-3);
+  margin-bottom: var(--spacing-4);
+}
+
+.form-logo-icon {
+  font-size: 36px;
+  color: var(--primary-600);
+}
+
 .title {
   text-align: center;
-  margin-bottom: var(--spacing-4);
+  margin: 0;
   color: var(--deep-600);
   font-size: var(--text-2xl);
   font-weight: var(--font-bold);
@@ -156,6 +192,15 @@ const handleSubmit = async (values: API.UserRegisterRequest) => {
   margin-bottom: var(--spacing-6);
   font-size: var(--text-base);
   font-weight: var(--font-medium);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2);
+}
+
+.desc-icon {
+  font-size: 18px;
+  color: var(--primary-500);
 }
 
 .tips {
@@ -163,6 +208,25 @@ const handleSubmit = async (values: API.UserRegisterRequest) => {
   color: var(--gray-600);
   font-size: var(--text-sm);
   text-align: right;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--spacing-1);
+}
+
+.tips-icon {
+  font-size: 16px;
+  opacity: 0.7;
+}
+
+.input-icon {
+  font-size: 18px;
+  color: var(--gray-500);
+}
+
+.register-form :deep(.ant-btn-primary) .btn-icon {
+  font-size: 18px;
+  margin-right: var(--spacing-2);
 }
 
 .tips a {
