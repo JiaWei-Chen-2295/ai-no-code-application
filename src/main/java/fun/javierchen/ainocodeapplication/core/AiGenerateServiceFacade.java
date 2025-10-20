@@ -1,16 +1,19 @@
 package fun.javierchen.ainocodeapplication.core;
 
 import com.mybatisflex.core.query.QueryWrapper;
+import dev.langchain4j.service.TokenStream;
 import fun.javierchen.ainocodeapplication.ai.AiCodeGeneratorService;
 import fun.javierchen.ainocodeapplication.ai.AiCodeGeneratorServiceFactory;
 import fun.javierchen.ainocodeapplication.ai.model.HtmlCodeResult;
 import fun.javierchen.ainocodeapplication.ai.model.MultiFileCodeResult;
 import fun.javierchen.ainocodeapplication.ai.model.enums.CodeGenTypeEnum;
+import fun.javierchen.ainocodeapplication.core.handler.StreamHandlerExecutor;
 import fun.javierchen.ainocodeapplication.core.model.CodeParseResult;
 import fun.javierchen.ainocodeapplication.core.parser.CodeParserExecutor;
 import fun.javierchen.ainocodeapplication.core.saver.CodeFileSaverExecutor;
 import fun.javierchen.ainocodeapplication.exceptiom.BusinessException;
 import fun.javierchen.ainocodeapplication.exceptiom.ErrorCode;
+import fun.javierchen.ainocodeapplication.model.User;
 import fun.javierchen.ainocodeapplication.model.entity.ChatHistory;
 import fun.javierchen.ainocodeapplication.service.ChatHistoryService;
 import fun.javierchen.ainocodeapplication.service.AppService;
@@ -38,6 +41,11 @@ public class AiGenerateServiceFacade {
 
     @Resource
     private AiCodeGeneratorService aiCodeGeneratorService;
+
+    @Resource
+    private StreamHandlerExecutor streamHandlerExecutor;
+
+
     @Lazy
     @Resource
     private ChatHistoryService chatHistoryService;
@@ -86,14 +94,14 @@ public class AiGenerateServiceFacade {
      * @return
      */
     public Flux<String> generateAndSaveFileStream(String userMessage, CodeGenTypeEnum codeGenTypeEnum,
-                                                  Long appId, BiConsumer<CodeParseResult, Integer> onCompleteCallback) {
+                                                  Long appId, BiConsumer<CodeParseResult, Integer> onCompleteCallback, User loginUser) {
         if (codeGenTypeEnum == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "生成的内容为空");
         }
         return switch (codeGenTypeEnum) {
             case HTML -> generateAndSaveSingleHTMLCodeStream(userMessage, appId, onCompleteCallback);
             case MUTI_FILE -> generateAndSaveMultiHTMLCodeStream(userMessage, appId, onCompleteCallback);
-            case VUE_PROJECT -> generateAndSaveVueProjectCodeStream(userMessage, appId, onCompleteCallback);
+            case VUE_PROJECT -> generateAndSaveVueProjectCodeStream(userMessage, appId, onCompleteCallback, loginUser);
         };
     }
 
@@ -104,7 +112,7 @@ public class AiGenerateServiceFacade {
      */
     @Deprecated
     public Flux<String> generateAndSaveFileStream(String userMessage, CodeGenTypeEnum codeGenTypeEnum, Long appId) {
-        return generateAndSaveFileStream(userMessage, codeGenTypeEnum, appId, null);
+        return generateAndSaveFileStream(userMessage, codeGenTypeEnum, appId, null, null);
     }
 
     /**
@@ -157,56 +165,58 @@ public class AiGenerateServiceFacade {
      * @param onCompleteCallback
      * @return
      */
-    private Flux<String> generateAndSaveVueProjectCodeStream(String userMessage, Long appId, BiConsumer<CodeParseResult, Integer> onCompleteCallback) {
-        try {
-            // 1. 先获取版本号并创建项目目录结构（在AI生成之前）
-            int version = appService.getNextVersion(appId);
-            File projectDir = appService.saveVueProject(appId, version);
-            
-            log.info("Vue项目目录已准备完成，开始AI生成: {}, 版本: {}", 
-                    projectDir.getAbsolutePath(), version);
+    private Flux<String> generateAndSaveVueProjectCodeStream(String userMessage, Long appId, BiConsumer<CodeParseResult, Integer> onCompleteCallback, User loginUser) {
+//        try {
+        // 1. 先获取版本号并创建项目目录结构（在AI生成之前）
+        int version = appService.getNextVersion(appId);
+        File projectDir = appService.saveVueProject(appId, version);
 
-            // 2. 获取AI服务并开始生成（AI将在正确的项目目录中工作）
-            var aiCodeGeneratorService = aiCodeGeneratorServiceFactory.getAiCodeGeneratorService(appId, CodeGenTypeEnum.VUE_PROJECT);
-            Flux<String> result = aiCodeGeneratorService.generateVueProjectCodeStream(appId, userMessage);
+        log.info("Vue项目目录已准备完成，开始AI生成: {}, 版本: {}",
+                projectDir.getAbsolutePath(), version);
 
-            // 3. 处理生成流程
-            StringBuilder sb = new StringBuilder();
-            return result.doOnNext(sb::append)
-                    .doOnComplete(() -> {
-                        try {
-                            log.info("Vue项目AI生成完成，项目目录: {}, 版本: {}", 
-                                    projectDir.getAbsolutePath(), version);
+        // 2. 获取AI服务并开始生成（AI将在正确的项目目录中工作）
+        var aiCodeGeneratorService = aiCodeGeneratorServiceFactory.getAiCodeGeneratorService(appId, CodeGenTypeEnum.VUE_PROJECT);
+        TokenStream tokenStream = aiCodeGeneratorService.generateVueProjectCodeStream(appId, userMessage);
+        Flux<String> result = TokenStream2FluxAdaptor.adapt(tokenStream);
 
-                            // 通过回调返回结果
-                            if (onCompleteCallback != null) {
-                                CodeParseResult parseResult = new CodeParseResult(true, true, true, null);
-                                onCompleteCallback.accept(parseResult, version);
-                            }
-                        } catch (Exception e) {
-                            log.error("Vue项目生成回调处理失败: {}", e.getMessage(), e);
-                            if (onCompleteCallback != null) {
-                                CodeParseResult parseResult = new CodeParseResult(false, false, false,
-                                        "生成回调处理失败: " + e.getMessage());
-                                onCompleteCallback.accept(parseResult, version);
-                            }
-                        }
-                    })
-                    .doOnError(error -> {
-                        log.error("Vue项目AI生成失败: {}", error.getMessage(), error);
-                        if (onCompleteCallback != null) {
-                            CodeParseResult parseResult = new CodeParseResult(false, false, false,
-                                    "AI生成失败: " + error.getMessage());
-                            onCompleteCallback.accept(parseResult, version);
-                        }
-                    });
-
-        } catch (Exception e) {
-            log.error("Vue项目目录创建失败: {}", e.getMessage(), e);
-            
-            // 返回错误流
-            return Flux.error(new RuntimeException("Vue项目目录创建失败: " + e.getMessage(), e));
-        }
+        return streamHandlerExecutor.doExecute(result, chatHistoryService, appId, loginUser, CodeGenTypeEnum.VUE_PROJECT);
+        // 3. 处理生成流程
+//            StringBuilder sb = new StringBuilder();
+//            return result.doOnNext(sb::append)
+//                    .doOnComplete(() -> {
+//                        try {
+//                            log.info("Vue项目AI生成完成，项目目录: {}, 版本: {}",
+//                                    projectDir.getAbsolutePath(), version);
+//
+//                            // 通过回调返回结果
+//                            if (onCompleteCallback != null) {
+//                                CodeParseResult parseResult = new CodeParseResult(true, true, true, null);
+//                                onCompleteCallback.accept(parseResult, version);
+//                            }
+//                        } catch (Exception e) {
+//                            log.error("Vue项目生成回调处理失败: {}", e.getMessage(), e);
+//                            if (onCompleteCallback != null) {
+//                                CodeParseResult parseResult = new CodeParseResult(false, false, false,
+//                                        "生成回调处理失败: " + e.getMessage());
+//                                onCompleteCallback.accept(parseResult, version);
+//                            }
+//                        }
+//                    })
+//                    .doOnError(error -> {
+//                        log.error("Vue项目AI生成失败: {}", error.getMessage(), error);
+//                        if (onCompleteCallback != null) {
+//                            CodeParseResult parseResult = new CodeParseResult(false, false, false,
+//                                    "AI生成失败: " + error.getMessage());
+//                            onCompleteCallback.accept(parseResult, version);
+//                        }
+//                    });
+//
+//        } catch (Exception e) {
+//            log.error("Vue项目目录创建失败: {}", e.getMessage(), e);
+//
+//            // 返回错误流
+//            return Flux.error(new RuntimeException("Vue项目目录创建失败: " + e.getMessage(), e));
+//        }
     }
 
     /**

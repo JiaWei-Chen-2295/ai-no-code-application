@@ -139,7 +139,8 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
                         log.info("保存AI对话历史成功，应用ID：{}，版本号：{}，是否包含代码：{}", 
                                 appId, version, parseResult.isHasValidCode());
                     }
-                }
+                },
+                loginUser
         );
         
         return contentFlux.map(chunk -> {

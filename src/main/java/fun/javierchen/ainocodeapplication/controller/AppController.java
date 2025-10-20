@@ -3,6 +3,7 @@ package fun.javierchen.ainocodeapplication.controller;
 import cn.hutool.json.JSONUtil;
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
+import fun.javierchen.ainocodeapplication.ai.model.enums.CodeGenTypeEnum;
 import fun.javierchen.ainocodeapplication.annotation.AuthCheck;
 import fun.javierchen.ainocodeapplication.common.BaseResponse;
 import fun.javierchen.ainocodeapplication.constant.UserConstant;
@@ -73,6 +74,9 @@ public class AppController {
         app.setUpdateTime(LocalDateTime.now());
         app.setEditTime(LocalDateTime.now());
         app.setIsDelete(0);
+        // todo: 暂时设置为 VUE 工程生成
+        app.setCodeGenType(CodeGenTypeEnum.VUE_PROJECT.getType());
+
 
         boolean result = appService.save(app);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);

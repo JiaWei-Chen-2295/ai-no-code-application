@@ -65,7 +65,7 @@ class AiGenerateServiceFacadeTest {
     void generateVueProjectCodeStream() {
         Flux<String> codeStream = aiGenerateServiceFacade.generateAndSaveFileStream(
                 "生成一个好习惯记录网站，支持倒计时，计时功能，简单实现，代码不超过300行",
-                CodeGenTypeEnum.VUE_PROJECT, 8L, (codeParseResult, progress) -> {});
+                CodeGenTypeEnum.VUE_PROJECT, 8L, (codeParseResult, progress) -> {}, null);
         // 阻塞等待所有数据收集完成
         List<String> result = codeStream.collectList().block();
         // 验证结果
