@@ -4,9 +4,9 @@
             <div class="app-cover">
                 <img v-if="app.cover" :src="app.cover" :alt="app.appName" class="cover-image" />
                 <div v-else class="default-cover">
-                    <Icon :icon="app.codeGenType === 'html' ? 'mdi:file-code' : 'mdi:folder-multiple'" class="app-icon" />
+                    <Icon :icon="app.codeGenType === 'html' ? 'mdi:file-code' : (app.codeGenType === 'vueProject' ? 'mdi:vuejs' : 'mdi:folder-multiple')" class="app-icon" />
                     <div class="app-type-badge">
-                        <Icon :icon="app.codeGenType === 'html' ? 'mdi:language-html5' : 'mdi:folder-open'" class="badge-icon" />
+                        <Icon :icon="app.codeGenType === 'html' ? 'mdi:language-html5' : (app.codeGenType === 'vueProject' ? 'mdi:vuejs' : 'mdi:folder-open')" class="badge-icon" />
                         <span>{{ getCodeGenTypeLabel(app.codeGenType) }}</span>
                     </div>
                 </div>
@@ -77,7 +77,8 @@ defineEmits<{
 const getCodeGenTypeLabel = (type?: string) => {
     const typeMap: Record<string, string> = {
         'html': '单文件网页',
-        'mutiFile': '多文件'
+        'mutiFile': '多文件',
+        'vueProject': 'Vue 项目'
     }
     return typeMap[type || ''] || type || '未知'
 }

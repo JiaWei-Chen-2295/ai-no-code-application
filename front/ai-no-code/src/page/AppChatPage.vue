@@ -8,7 +8,7 @@
                 </a-button>
                 <div class="app-info">
                     <h2 class="app-name">
-                        <Icon :icon="app?.codeGenType === 'html' ? 'mdi:file-code-outline' : 'mdi:folder-multiple-outline'" class="app-icon" />
+                        <Icon :icon="app?.codeGenType === 'html' ? 'mdi:file-code-outline' : (app?.codeGenType === 'vueProject' ? 'mdi:vuejs' : 'mdi:folder-multiple-outline')" class="app-icon" />
                         {{ app?.appName || '加载中...' }}
                     </h2>
                     <span class="app-type">
@@ -203,7 +203,7 @@ const typingSpeed = ref(30) // 打字速度(ms)，越小越快
 // 全局函数：复制代码到剪贴板
 const setupGlobalFunctions = () => {
     // 复制代码功能
-    (window as unknown as { copyCodeToClipboard: Function }).copyCodeToClipboard = async (button: HTMLElement) => {
+    (window as unknown as { copyCodeToClipboard: (button: HTMLElement) => Promise<void> | void }).copyCodeToClipboard = async (button: HTMLElement) => {
         try {
             const code = button.getAttribute('data-code') || ''
             // 解码HTML实体
@@ -239,7 +239,7 @@ const setupGlobalFunctions = () => {
     }
     
     // 折叠代码块功能
-    (window as unknown as { toggleCodeBlock: Function }).toggleCodeBlock = (button: HTMLElement) => {
+    (window as unknown as { toggleCodeBlock: (button: HTMLElement) => void }).toggleCodeBlock = (button: HTMLElement) => {
         const wrapper = button.closest('.code-block-wrapper')
         if (wrapper) {
             wrapper.classList.toggle('collapsed')
@@ -527,14 +527,17 @@ const updatePreviewUrl = () => {
     if (!isGenerated.value && !hasEnoughHistory) return
 
     const baseUrl = 'http://localhost:8081'
+    const isVueProject = app.value.codeGenType === 'vueProject'
+
     if (selectedVersion.value === 'latest') {
         // 获取最新版本号
         const latestVersion = getLatestVersion()
         if (latestVersion) {
             previewUrl.value = `${baseUrl}/api/static/preview/${app.value.id}/${latestVersion}/`
         } else {
-            // 如果没有版本号，使用默认路径
-            previewUrl.value = `${baseUrl}/api/static/preview/${app.value.id}/`
+            // latest 但还没有版本号
+            // 对于 vue 项目，必须带版本号，默认 1
+            previewUrl.value = `${baseUrl}/api/static/preview/${app.value.id}/${isVueProject ? 1 : ''}${isVueProject ? '/' : ''}`
         }
     } else {
         previewUrl.value = `${baseUrl}/api/static/preview/${app.value.id}/${selectedVersion.value}/`
@@ -594,6 +597,9 @@ const renderContent = (content: string) => {
     if (!content) return ''
     
     const codeGenType = app.value?.codeGenType
+    if (codeGenType === 'vueProject') {
+        return renderVueProjectContent(content)
+    }
     
     // HTML单文件类型：检测完整HTML代码
     if (codeGenType === 'html') {
@@ -663,7 +669,7 @@ const renderSafeHtmlCodeBlock = (htmlContent: string) => {
 }
 
 // 安全渲染Markdown内容（防止代码执行）
-const renderSafeMarkdown = (content: string) => {
+const renderSafeMarkdown = (content: string): string => {
     if (!content) return ''
     
     // 配置marked选项
@@ -751,7 +757,7 @@ const renderSafeMarkdown = (content: string) => {
         }
     }
     
-    return marked(content, { renderer })
+    return marked(content, { renderer }) as unknown as string
 }
 
 // 格式化时间
@@ -883,9 +889,74 @@ const handleVersionChange = (value: string | number) => {
 const getCodeGenTypeLabel = (type?: string) => {
     const typeMap: Record<string, string> = {
         'html': '单文件网页',
-        'mutiFile': '多文件'
+        'mutiFile': '多文件',
+        'vueProject': 'Vue 项目'
     }
     return typeMap[type || ''] || type || '未知'
+}
+
+// 渲染 Vue 项目的内容：将工具调用渲染为卡片
+const renderVueProjectContent = (content: string) => {
+    if (!content) return ''
+
+    const escapeHtml = (unsafe: string) => unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;")
+
+    const toolCallRegex = /\[工具调用\]\s*(.+?)\s*\n```([\s\S]*?)```/g
+    let match: RegExpExecArray | null
+    let lastIndex = 0
+    const htmlParts: string[] = []
+
+    while ((match = toolCallRegex.exec(content)) !== null) {
+        const beforeText = content.slice(lastIndex, match.index)
+        if (beforeText.trim()) {
+            htmlParts.push(renderSafeMarkdown(beforeText))
+        }
+
+        const header = match[1].trim() // 例："写入文件 src/pages"
+        const body = match[2].trim() // 例："null" 或 代码内容
+
+        let action = header
+        let target = ''
+        const headerParts = header.match(/^(\S+)\s+(.+)$/)
+        if (headerParts) {
+            action = headerParts[1]
+            target = headerParts[2]
+        }
+
+        const hasContent = body && body.toLowerCase() !== 'null'
+        const bodyEscaped = hasContent ? escapeHtml(body) : ''
+
+        const cardHtml = `
+<div class="tool-call-card">
+  <div class="tool-call-header">
+    <span class="tool-call-icon">🛠️</span>
+    <span class="tool-call-title">工具调用</span>
+    <span class="tool-call-action">${escapeHtml(action)}</span>
+  </div>
+  <div class="tool-call-meta">
+    <span class="tool-call-label">目标</span>
+    <span class="tool-call-target">${escapeHtml(target)}</span>
+  </div>
+  <div class="tool-call-body">
+    ${hasContent ? `<pre><code>${bodyEscaped}</code></pre>` : `<div class="tool-call-empty">无内容</div>`}
+  </div>
+</div>`
+
+        htmlParts.push(cardHtml)
+        lastIndex = toolCallRegex.lastIndex
+    }
+
+    const remaining = content.slice(lastIndex)
+    if (remaining.trim()) {
+        htmlParts.push(renderSafeMarkdown(remaining))
+    }
+
+    return htmlParts.join('')
 }
 </script>
 
@@ -1129,6 +1200,7 @@ const getCodeGenTypeLabel = (type?: string) => {
     line-height: var(--leading-relaxed);
     word-wrap: break-word;
     overflow-wrap: break-word;
+    border: 1px solid var(--secondary-200);
 }
 
 .user-message .message-text {
@@ -1137,11 +1209,16 @@ const getCodeGenTypeLabel = (type?: string) => {
     margin-left: auto;
     display: inline-block;
     max-width: 80%;
+    border: none;
+    box-shadow: 0 2px 8px rgba(59,130,246,0.25);
 }
 
 .ai-message .message-text {
     margin-right: auto;
     max-width: 80%;
+    background: #ffffff;
+    border: 1px solid var(--secondary-200);
+    box-shadow: var(--shadow-sm);
 }
 
 .message-time {
@@ -1203,13 +1280,19 @@ const getCodeGenTypeLabel = (type?: string) => {
     display: flex;
     gap: var(--spacing-3);
     align-items: flex-end;
+    background: white;
+    border: 2px solid var(--secondary-200);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-2) var(--spacing-3);
+    box-shadow: var(--shadow-sm);
 }
 
 .message-input {
     flex: 1;
     border-radius: var(--radius-lg) !important;
-    border: 2px solid var(--secondary-200) !important;
+    border: none !important;
     transition: var(--transition-all) !important;
+    padding: 10px 12px !important;
 }
 
 .message-input:focus {
@@ -1222,8 +1305,8 @@ const getCodeGenTypeLabel = (type?: string) => {
     border-color: var(--primary-600) !important;
     color: white !important;
     border-radius: var(--radius-lg) !important;
-    height: 40px !important;
-    width: 40px !important;
+    height: 44px !important;
+    width: 44px !important;
     padding: 0 !important;
     display: flex !important;
     align-items: center !important;
@@ -1580,6 +1663,77 @@ const getCodeGenTypeLabel = (type?: string) => {
     overflow-y: visible;
     transition: max-height 0.3s ease, opacity 0.3s ease;
     position: relative;
+}
+
+/* 工具调用卡片样式（Vue 项目） */
+.markdown-content :deep(.tool-call-card) {
+    border: 2px solid var(--secondary-200);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-4);
+    margin: 1em 0;
+    background: linear-gradient(180deg, #ffffff 0%, #fafbff 100%);
+    box-shadow: var(--shadow-md);
+}
+
+.markdown-content :deep(.tool-call-header) {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    margin-bottom: var(--spacing-2);
+}
+
+.markdown-content :deep(.tool-call-icon) {
+    font-size: 18px;
+}
+
+.markdown-content :deep(.tool-call-title) {
+    font-weight: var(--font-semibold);
+    color: var(--deep-600);
+}
+
+.markdown-content :deep(.tool-call-action) {
+    margin-left: auto;
+    background: var(--primary-50);
+    color: var(--primary-700);
+    border: 1px solid var(--primary-200);
+    padding: 2px 8px;
+    border-radius: var(--radius-md);
+    font-size: var(--text-xs);
+}
+
+.markdown-content :deep(.tool-call-meta) {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    margin-bottom: var(--spacing-2);
+}
+
+.markdown-content :deep(.tool-call-label) {
+    color: var(--gray-600);
+    font-size: var(--text-sm);
+}
+
+.markdown-content :deep(.tool-call-target) {
+    font-family: 'JetBrains Mono','Fira Code','Consolas',monospace;
+    background: var(--gray-100);
+    border: 1px dashed var(--secondary-300);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+}
+
+.markdown-content :deep(.tool-call-body pre) {
+    margin: 0;
+    background: #0d1117;
+    border: 1px solid var(--secondary-200);
+    border-radius: var(--radius-md);
+}
+
+.markdown-content :deep(.tool-call-empty) {
+    color: var(--gray-500);
+    background: var(--gray-50);
+    border: 1px dashed var(--secondary-300);
+    padding: var(--spacing-3);
+    border-radius: var(--radius-md);
 }
 
 /* 大型代码块的特殊处理 */

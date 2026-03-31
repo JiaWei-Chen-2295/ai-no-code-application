@@ -66,6 +66,7 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
         chatHistory.setUpdateTime(LocalDateTime.now());
         chatHistory.setIsDelete(0);
 
+
         return this.save(chatHistory);
     }
 
@@ -106,6 +107,12 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean saveAiMessage(Long appId, Long userId, String message, boolean isCode, String errorMessage) {
+        return saveAiMessage(appId, userId, message, isCode, errorMessage, null);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean saveAiMessage(Long appId, Long userId, String message, boolean isCode, String errorMessage, Integer version) {
         // 1. 参数校验
         ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用 ID 不能为空");
         ThrowUtils.throwIf(userId == null || userId <= 0, ErrorCode.PARAMS_ERROR, "用户 ID 不能为空");
@@ -127,24 +134,31 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
         chatHistory.setUserId(userId);
         chatHistory.setIsCode(isCode ? 1 : 0);
 
-        // 如果是代码消息且不是第一次生成，则版本号+1
+        // 如果是代码消息且不是第一次生成，则设置版本号
         if (isCode) {
-            // 查询该应用下最新的代码版本号
-            QueryWrapper queryWrapper = QueryWrapper.create()
-                    .select(max("codeVersion").as("maxVersion"))
-                    .from(ChatHistory.class)
-                    .where(ChatHistory::getAppId).eq(appId)
-                    .and(ChatHistory::getIsCode).eq(1)
-                    .and(ChatHistory::getIsDelete).eq(0);
+            if (version != null) {
+                // 如果指定了版本号，直接使用（Vue项目场景）
+                chatHistory.setCodeVersion(version);
+                log.info("使用指定版本号保存AI消息: appId={}, version={}", appId, version);
+            } else {
+                // 如果未指定版本号，自动计算（传统场景）
+                QueryWrapper queryWrapper = QueryWrapper.create()
+                        .select(max("codeVersion").as("maxVersion"))
+                        .from(ChatHistory.class)
+                        .where(ChatHistory::getAppId).eq(appId)
+                        .and(ChatHistory::getIsCode).eq(1)
+                        .and(ChatHistory::getIsDelete).eq(0);
 
-            ChatHistory maxVersionChatHistory = this.getOne(queryWrapper);
-            int maxVersion = 0;
-            if (maxVersionChatHistory != null && maxVersionChatHistory.getCodeVersion() != null) {
-                maxVersion = maxVersionChatHistory.getCodeVersion();
+                ChatHistory maxVersionChatHistory = this.getOne(queryWrapper);
+                int maxVersion = 0;
+                if (maxVersionChatHistory != null && maxVersionChatHistory.getCodeVersion() != null) {
+                    maxVersion = maxVersionChatHistory.getCodeVersion();
+                }
+
+                // 版本号+1
+                chatHistory.setCodeVersion(maxVersion + 1);
+                log.info("自动计算版本号保存AI消息: appId={}, version={}", appId, maxVersion + 1);
             }
-
-            // 版本号+1
-            chatHistory.setCodeVersion(maxVersion + 1);
         } else {
             chatHistory.setCodeVersion(0);
         }

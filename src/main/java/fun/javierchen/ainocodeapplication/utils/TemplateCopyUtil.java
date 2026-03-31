@@ -423,4 +423,57 @@ public class TemplateCopyUtil {
         
         return result;
     }
+    
+    /**
+     * 复制Vue项目版本（用于版本间复制）
+     * 跳过 node_modules 和 dist 目录，为 node_modules 创建符号链接
+     * 
+     * @param sourcePath 源版本路径
+     * @param targetPath 目标路径
+     * @param sharedNodeModulesPath 共享node_modules路径
+     * @return 复制结果
+     * @throws IOException IO异常
+     */
+    public static CopyResult copyVueProjectVersion(
+            String sourcePath, 
+            String targetPath, 
+            String sharedNodeModulesPath) throws IOException {
+        
+        Path source = Paths.get(sourcePath);
+        Path target = Paths.get(targetPath);
+        Path sharedNodeModules = Paths.get(sharedNodeModulesPath);
+        
+        // 1. 复制项目文件（跳过 node_modules 和 dist）
+        CopyConfig config = new CopyConfig()
+                .skipNodeModules(true)
+                .skipDirectory("dist")  // 跳过构建产物
+                .verbose(true);
+        
+        CopyResult result = copyTemplate(source, target, config);
+        
+        // 2. 创建node_modules符号链接
+        try {
+            Path nodeModulesLink = target.resolve("node_modules");
+            
+            if (Files.exists(nodeModulesLink)) {
+                Files.delete(nodeModulesLink);
+            }
+            
+            // 计算相对路径
+            Path relativePath = nodeModulesLink.getParent().relativize(sharedNodeModules);
+            Files.createSymbolicLink(nodeModulesLink, relativePath);
+            
+            result.incrementSymlinks();
+            
+            System.out.println("✅ Vue项目版本复制完成！");
+            System.out.println("📦 node_modules -> " + relativePath);
+            System.out.println("💡 提示：从上一版本复制，保留了所有代码更改");
+            
+        } catch (IOException e) {
+            System.out.println("⚠️  无法创建node_modules符号链接: " + e.getMessage());
+            System.out.println("💡 请手动运行: npm install");
+        }
+        
+        return result;
+    }
 }

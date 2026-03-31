@@ -11,6 +11,7 @@ import fun.javierchen.ainocodeapplication.constant.AppConstant;
 import fun.javierchen.ainocodeapplication.constant.CodeFileConstant;
 import fun.javierchen.ainocodeapplication.constant.CommonConstant;
 import fun.javierchen.ainocodeapplication.core.AiGenerateServiceFacade;
+import fun.javierchen.ainocodeapplication.core.builder.VueProjectBuilder;
 import fun.javierchen.ainocodeapplication.exceptiom.BusinessException;
 import fun.javierchen.ainocodeapplication.exceptiom.ErrorCode;
 import fun.javierchen.ainocodeapplication.mapper.AppMapper;
@@ -66,6 +67,9 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     @Resource
     private ChatHistoryService chatHistoryService;
 
+    @Resource
+    private VueProjectBuilder vueProjectBuilder;
+
     @Override
     public void validApp(App app, boolean add) {
         if (app == null) {
@@ -91,6 +95,8 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         if (StringUtils.isNotBlank(initPrompt) && initPrompt.length() > 8192) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "应用描述过长");
         }
+
+
         if (StringUtils.isNotBlank(codeGenType) && CodeGenTypeEnum.getEnumByType(codeGenType) == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "不支持的代码生成类型");
         }
@@ -295,14 +301,35 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         
         // 6. 获取代码生成类型，构建版本化的源目录路径
         String codeGenType = app.getCodeGenType();
-        String sourceDirName = codeGenType + "_" + appId;
-        String sourceDirPath = CodeFileConstant.CODE_FILE_PATH + File.separator + sourceDirName + File.separator + deployVersion;
+        boolean isVueProject = CodeGenTypeEnum.VUE_PROJECT.getType().equals(codeGenType);
+        
+        String sourceDirPath;
+        if (isVueProject) {
+            // Vue项目使用沙箱目录路径
+            Path appSandboxRoot = DirectorySandboxUtil.getProjectDirectoryPath(appId);
+            Path vueProjectDir = appSandboxRoot.resolve("v" + deployVersion).resolve("vue-project");
+            sourceDirPath = vueProjectDir.toString();
+        } else {
+            // HTML和多文件项目使用传统路径
+            String sourceDirName = codeGenType + "_" + appId;
+            sourceDirPath = CodeFileConstant.CODE_FILE_PATH + File.separator + sourceDirName + File.separator + deployVersion;
+        }
         
         // 7. 检查源目录是否存在
         File sourceDir = new File(sourceDirPath);
         if (!sourceDir.exists() || !sourceDir.isDirectory()) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, 
                     String.format("版本 %d 的代码不存在，请检查版本号或重新生成代码", deployVersion));
+        }
+        
+        // 7.1 如果是Vue项目，先执行构建
+        if (isVueProject) {
+            log.info("检测到Vue项目，开始执行构建...");
+            boolean buildSuccess = vueProjectBuilder.buildProject(sourceDirPath);
+            if (!buildSuccess) {
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR, "Vue项目构建失败，请检查项目代码");
+            }
+            log.info("Vue项目构建成功");
         }
         
         // 8. 复制文件到部署目录
@@ -329,7 +356,12 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         ThrowUtils.throwIf(!updateResult, ErrorCode.OPERATION_ERROR, "更新应用部署信息失败");
         
         // 10. 返回可访问的 URL
-        return String.format("%s/%s/", AppConstant.CODE_DEPLOY_HOST, deployKey);
+        if (isVueProject) {
+            // Vue项目需要访问dist目录
+            return String.format("%s/%s/dist/", AppConstant.CODE_DEPLOY_HOST, deployKey);
+        } else {
+            return String.format("%s/%s/", AppConstant.CODE_DEPLOY_HOST, deployKey);
+        }
     }
 
     /**
@@ -611,6 +643,54 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         }
     }
 
+    /**
+     * 从上一个版本复制Vue项目
+     * 用于增量开发，保留上一版本的所有代码更改
+     * 
+     * @param sourcePath 源版本路径
+     * @param targetPath 目标路径
+     * @param sharedNodeModulesPath 共享node_modules路径
+     * @return 复制结果信息
+     */
+    private String copyVueProjectFromPreviousVersion(String sourcePath, String targetPath, String sharedNodeModulesPath) {
+        try {
+            // 验证路径
+            if (StringUtils.isBlank(sourcePath) || StringUtils.isBlank(targetPath)) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "源路径或目标路径不能为空");
+            }
+            
+            log.info("开始从上一版本复制Vue项目");
+            log.debug("源路径: {}", sourcePath);
+            log.debug("目标路径: {}", targetPath);
+            log.debug("共享node_modules路径: {}", sharedNodeModulesPath);
+            
+            // 使用工具类复制Vue项目版本（跳过dist和node_modules）
+            TemplateCopyUtil.CopyResult result = TemplateCopyUtil.copyVueProjectVersion(
+                sourcePath,
+                targetPath,
+                sharedNodeModulesPath
+            );
+            
+            // 记录复制结果
+            log.info("Vue项目版本复制完成: {}", result);
+            
+            // 返回成功信息
+            return String.format("Vue项目版本复制成功！复制文件：%d个，目录：%d个，符号链接：%d个，耗时：%dms",
+                result.getCopiedFiles(),
+                result.getCopiedDirectories(),
+                result.getCreatedSymlinks(),
+                result.getDuration()
+            );
+            
+        } catch (IOException e) {
+            log.error("复制Vue项目版本失败: {}", e.getMessage(), e);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "复制Vue项目版本失败: " + e.getMessage());
+        } catch (Exception e) {
+            log.error("复制Vue项目版本过程中发生未知错误: {}", e.getMessage(), e);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "复制Vue项目版本失败: " + e.getMessage());
+        }
+    }
+
     @Override
     public int getNextVersion(Long appId) {
         try {
@@ -664,8 +744,30 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
             Path vueProjectDir = versionDirectory.resolve("vue-project");
             Files.createDirectories(vueProjectDir);
             
-            // 使用Vue项目符号链接复制方法
-            String result = copyVueTemplateWithSymlinks(vueProjectDir.toString());
+            // 根据版本号选择复制方式
+            String result;
+            if (version > 1) {
+                // 检查上一个版本是否存在
+                Path previousVersionDir = appSandboxRoot.resolve("v" + (version - 1)).resolve("vue-project");
+                if (Files.exists(previousVersionDir)) {
+                    // 从上一个版本复制
+                    Path sharedNodeModulesPath = Paths.get("front/ai-no-code/node_modules").toAbsolutePath();
+                    result = copyVueProjectFromPreviousVersion(
+                        previousVersionDir.toString(), 
+                        vueProjectDir.toString(),
+                        sharedNodeModulesPath.toString()
+                    );
+                    log.info("从上一版本复制Vue项目: v{} -> v{} (应用ID: {})", version - 1, version, appId);
+                } else {
+                    // 上一版本不存在，从模板复制
+                    result = copyVueTemplateWithSymlinks(vueProjectDir.toString());
+                    log.warn("上一版本不存在，从模板复制: v{} (应用ID: {})", version, appId);
+                }
+            } else {
+                // 版本1，从模板复制
+                result = copyVueTemplateWithSymlinks(vueProjectDir.toString());
+                log.info("首次创建，从模板复制: v{} (应用ID: {})", version, appId);
+            }
             
             log.info("Vue项目目录已创建: {} (应用ID: {}, 版本: {}), 结果: {}", 
                     vueProjectDir.toAbsolutePath(), appId, version, result);

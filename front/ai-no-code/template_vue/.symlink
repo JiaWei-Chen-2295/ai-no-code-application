@@ -1,0 +1,17 @@
+# 此文件标记项目使用了符号链接
+# 
+# 符号链接目录：
+# - node_modules -> ../node_modules
+#
+# 复制此项目时请注意：
+# 1. 使用支持符号链接的复制方法（参考 JAVA_COPY_SYMLINK.md）
+# 2. 或复制后删除 node_modules 并运行 npm install
+#
+# 详细信息：SYMLINK_SETUP.md
+
+
+
+
+
+
+

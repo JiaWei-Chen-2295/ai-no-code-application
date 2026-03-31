@@ -33,6 +33,7 @@
                                 @change="handleSearch" style="width: 120px">
                                 <a-select-option value="html">单文件网页</a-select-option>
                                 <a-select-option value="mutiFile">多文件</a-select-option>
+                                <a-select-option value="vueProject">Vue 项目</a-select-option>
                             </a-select>
                         </a-form-item>
 
@@ -454,7 +455,8 @@ const deleteApp = (app: AppWithStatus) => {
 const getCodeGenTypeLabel = (type?: string) => {
     const typeMap: Record<string, string> = {
         'html': '单文件网页',
-        'mutiFile': '多文件'
+        'mutiFile': '多文件',
+        'vueProject': 'Vue 项目'
     }
     return typeMap[type || ''] || type || '未知'
 }
@@ -462,7 +464,8 @@ const getCodeGenTypeLabel = (type?: string) => {
 const getTypeColor = (type?: string) => {
     const colorMap: Record<string, string> = {
         'html': 'orange',
-        'mutiFile': 'blue'
+        'mutiFile': 'blue',
+        'vueProject': 'green'
     }
     return colorMap[type || ''] || 'default'
 }

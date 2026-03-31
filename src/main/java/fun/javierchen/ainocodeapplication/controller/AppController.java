@@ -74,8 +74,6 @@ public class AppController {
         app.setUpdateTime(LocalDateTime.now());
         app.setEditTime(LocalDateTime.now());
         app.setIsDelete(0);
-        // todo: 暂时设置为 VUE 工程生成
-        app.setCodeGenType(CodeGenTypeEnum.VUE_PROJECT.getType());
 
 
         boolean result = appService.save(app);
@@ -329,6 +327,7 @@ public class AppController {
         ThrowUtils.throwIf(StringUtils.isBlank(message), ErrorCode.PARAMS_ERROR, "用户消息不能为空");
         User loginUser = userService.getLoginUser(request);
         Flux<String> contentFlux = appService.chatGenCode(appId, message, loginUser);
+        // 封装流式输出的内容 防止前端丢失空格
         return contentFlux.map(
                 chunk -> {
                     Map<String, String> wrapper = Map.of("d", chunk);

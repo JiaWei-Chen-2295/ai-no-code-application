@@ -179,7 +179,25 @@ public class AiGenerateServiceFacade {
         TokenStream tokenStream = aiCodeGeneratorService.generateVueProjectCodeStream(appId, userMessage);
         Flux<String> result = TokenStream2FluxAdaptor.adapt(tokenStream);
 
-        return streamHandlerExecutor.doExecute(result, chatHistoryService, appId, loginUser, CodeGenTypeEnum.VUE_PROJECT);
+        // 3. 将版本号传递给处理器，确保数据库版本号与文件系统版本号一致
+        return streamHandlerExecutor.doExecute(result, chatHistoryService, appId, loginUser, CodeGenTypeEnum.VUE_PROJECT, version)
+                .doOnComplete(() -> {
+                    // 4. 流完成后调用回调，传递版本号
+                    if (onCompleteCallback != null) {
+                        CodeParseResult parseResult = new CodeParseResult(true, true, true, null);
+                        onCompleteCallback.accept(parseResult, version);
+                    }
+                    log.info("Vue项目AI生成完成，项目目录: {}, 版本: {}",
+                            projectDir.getAbsolutePath(), version);
+                })
+                .doOnError(error -> {
+                    log.error("Vue项目AI生成失败: {}", error.getMessage(), error);
+                    if (onCompleteCallback != null) {
+                        CodeParseResult parseResult = new CodeParseResult(false, false, false,
+                                "AI生成失败: " + error.getMessage());
+                        onCompleteCallback.accept(parseResult, version);
+                    }
+                });
         // 3. 处理生成流程
 //            StringBuilder sb = new StringBuilder();
 //            return result.doOnNext(sb::append)

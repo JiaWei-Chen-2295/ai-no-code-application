@@ -20,11 +20,8 @@ public class TokenStream2FluxAdaptor {
         return Flux.<String>create(
                 sink -> {
                     tokenStream.onPartialResponse((String partialResponse) -> {
-                                // 过滤空响应，避免发送无效数据
-                                if (partialResponse != null && !partialResponse.isEmpty()) {
-                                    AiResponseMessage aiResponseMessage = new AiResponseMessage(partialResponse);
-                                    sink.next(JSONUtil.toJsonStr(aiResponseMessage));
-                                }
+                                AiResponseMessage aiResponseMessage = new AiResponseMessage(partialResponse);
+                                sink.next(JSONUtil.toJsonStr(aiResponseMessage));
                             })
                             .onPartialToolExecutionRequest(
                                     (index, toolExecutionRequest) -> {

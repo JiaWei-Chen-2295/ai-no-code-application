@@ -34,6 +34,10 @@
                 <Icon icon="mdi:folder-multiple-outline" class="option-icon" />
                 <span>多文件项目</span>
               </a-select-option>
+              <a-select-option value="vueProject">
+                <Icon icon="mdi:vuejs" class="option-icon" />
+                <span>Vue 项目</span>
+              </a-select-option>
             </a-select>
           </div>
           <a-button type="primary" class="generate-btn" @click="createApp" :loading="creating">
@@ -112,7 +116,7 @@ const userStore = useUserStore()
 
 // 响应式数据
 const prompt = ref('')
-const codeGenType = ref<'html' | 'mutiFile'>('html') // 默认为单文件网页
+const codeGenType = ref<'html' | 'mutiFile' | 'vueProject'>('html') // 默认为单文件网页
 const creating = ref(false)
 const myApps = ref<API.AppVO[]>([])
 const featuredApps = ref<API.AppVO[]>([])

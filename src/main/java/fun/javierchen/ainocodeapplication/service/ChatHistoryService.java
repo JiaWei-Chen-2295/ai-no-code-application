@@ -44,6 +44,19 @@ public interface ChatHistoryService extends IService<ChatHistory> {
     boolean saveAiMessage(Long appId, Long userId, String message, boolean isCode, String errorMessage);
 
     /**
+     * 保存AI消息（支持指定版本号）
+     *
+     * @param appId        应用ID
+     * @param userId       用户ID
+     * @param message      消息内容
+     * @param isCode       是否为代码消息
+     * @param errorMessage 错误信息（如果AI回复失败）
+     * @param version      版本号（如果为null，则自动计算）
+     * @return 是否保存成功
+     */
+    boolean saveAiMessage(Long appId, Long userId, String message, boolean isCode, String errorMessage, Integer version);
+
+    /**
      * 使用游标分页查询对话历史
      * @param appId
      * @param pageSize

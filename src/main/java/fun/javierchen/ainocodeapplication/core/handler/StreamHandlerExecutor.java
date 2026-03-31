@@ -34,9 +34,26 @@ public class StreamHandlerExecutor {
     public Flux<String> doExecute(Flux<String> originFlux,
                                   ChatHistoryService chatHistoryService,
                                   long appId, User loginUser, CodeGenTypeEnum codeGenType) {
+        return doExecute(originFlux, chatHistoryService, appId, loginUser, codeGenType, null);
+    }
+
+    /**
+     * 创建流处理器并处理聊天历史记录（支持指定版本号）
+     *
+     * @param originFlux         原始流
+     * @param chatHistoryService 聊天历史服务
+     * @param appId              应用ID
+     * @param loginUser          登录用户
+     * @param codeGenType        代码生成类型
+     * @param version            版本号（可选，仅 VUE_PROJECT 使用）
+     * @return 处理后的流
+     */
+    public Flux<String> doExecute(Flux<String> originFlux,
+                                  ChatHistoryService chatHistoryService,
+                                  long appId, User loginUser, CodeGenTypeEnum codeGenType, Integer version) {
         return switch (codeGenType) {
-            case VUE_PROJECT -> // 使用注入的组件实例
-                    jsonMessageStreamHandler.handle(originFlux, chatHistoryService, appId, loginUser);
+            case VUE_PROJECT -> // 使用注入的组件实例，传递版本号
+                    jsonMessageStreamHandler.handle(originFlux, chatHistoryService, appId, loginUser, version);
             case HTML, MUTI_FILE -> // 简单文本处理器不需要依赖注入
                     null;
         };

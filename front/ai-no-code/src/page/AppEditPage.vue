@@ -50,6 +50,7 @@
                                         <a-select v-model:value="formData.codeGenType" disabled>
                                             <a-select-option value="html">单文件网页</a-select-option>
                                             <a-select-option value="mutiFile">多文件</a-select-option>
+                                            <a-select-option value="vueProject">Vue 项目</a-select-option>
                                         </a-select>
                                     </a-form-item>
                                 </a-col>
