@@ -153,6 +153,7 @@ import { ref, onMounted, nextTick, watch, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { marked } from 'marked'
+import DOMPurify from 'dompurify'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github-dark.css'
 import { Icon } from '@iconify/vue'
@@ -525,9 +526,16 @@ const deployApp = async () => {
                     duration: 6
                 })
                 // 将构建错误添加为AI消息，方便用户看到
+                // 转义 errorMsg 中的 HTML 特殊字符，防止 XSS
+                const safeErrorMsg = errorMsg
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;')
                 messages.value.push({
                     role: 'assistant',
-                    content: `> ❌ **部署失败 - 构建错误**\n\n${errorMsg}\n\n> 💡 请描述问题或发送"修复构建错误"让AI帮你解决`,
+                    content: `> ❌ **部署失败 - 构建错误**\n\n${safeErrorMsg}\n\n> 💡 请描述问题或发送"修复构建错误"让AI帮你解决`,
                     timestamp: new Date()
                 })
             } else {
@@ -780,7 +788,8 @@ const renderSafeMarkdown = (content: string): string => {
         }
     }
     
-    return marked(content, { renderer }) as unknown as string
+    const rawHtml = marked(content, { renderer }) as unknown as string
+    return DOMPurify.sanitize(rawHtml)
 }
 
 // 格式化时间
