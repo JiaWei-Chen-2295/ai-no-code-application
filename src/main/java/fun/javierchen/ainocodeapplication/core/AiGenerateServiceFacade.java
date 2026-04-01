@@ -234,8 +234,11 @@ public class AiGenerateServiceFacade {
             log.warn("Vue项目构建失败 (第{}次): {}", attempt + 1, errorSummary);
 
             if (attempt >= MAX_BUILD_FIX_ATTEMPTS) {
-                // 达到最大重试次数，返回错误信息
-                return Flux.just("\n\n> ⚠️ **项目构建失败**，已尝试自动修复但未成功。部署时将重新尝试构建。\n\n> 错误摘要: " + truncate(errorSummary, 500) + "\n\n");
+                // 达到最大重试次数，先发送提示文本，再发出错误信号让外层 doOnError 正确处理状态
+                String msg = "\n\n> ⚠️ **项目构建失败**，已尝试自动修复但未成功。部署时将重新尝试构建。\n\n> 错误摘要: " + truncate(errorSummary, 500) + "\n\n";
+                return Flux.just(msg)
+                        .concatWith(Flux.error(new BusinessException(ErrorCode.OPERATION_ERROR,
+                                "Vue项目构建失败: " + truncate(errorSummary, 500))));
             }
 
             // 构建失败，让AI修复
