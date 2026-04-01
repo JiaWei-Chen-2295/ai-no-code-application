@@ -458,7 +458,7 @@ const streamChat = async (userMessage: string) => {
             }
         }
 
-        eventSource.onerror = () => {
+        eventSource.onerror = (err) => {
             if (timeout) clearTimeout(timeout)
             eventSource.close()
             isStreaming.value = false
@@ -469,11 +469,19 @@ const streamChat = async (userMessage: string) => {
                 clearTypingEffect()
             }
 
-            // 如果没有收到完整的消息就断开，说明出错了
-            if (aiMessageObj.content && !isGenerated.value) {
-                aiMessageObj.content += '\n\n[⚠️ 连接中断，内容可能不完整]'
-                message.error('AI对话连接中断，内容可能不完整')
+            // 根据已收到的内容和生成状态区分错误类型
+            if (isGenerated.value) {
+                // 已经标记为生成完成，可能是正常结束后的断开
+                return
+            }
+            
+            if (aiMessageObj.content) {
+                // 收到了部分内容后断开
+                aiMessageObj.content += '\n\n> ⚠️ **连接中断**：内容可能不完整，请重新发送消息继续生成。'
+                message.warning('AI对话连接中断，内容可能不完整')
             } else {
+                // 完全没收到内容
+                aiMessageObj.content = '> ❌ **连接失败**：无法连接到AI服务，请检查网络后重试。'
                 message.error('AI对话连接失败，请重试')
             }
         }
@@ -509,10 +517,25 @@ const deployApp = async () => {
             // 重新加载应用信息以获取最新的部署状态
             await loadApp()
         } else {
-            message.error('部署失败：' + res.data.message)
+            const errorMsg = res.data.message || '未知错误'
+            // 如果是构建失败，显示详细错误信息
+            if (errorMsg.includes('构建失败')) {
+                message.error({
+                    content: '部署失败：项目构建出错，请继续与AI对话修复代码后重试',
+                    duration: 6
+                })
+                // 将构建错误添加为AI消息，方便用户看到
+                messages.value.push({
+                    role: 'assistant',
+                    content: `> ❌ **部署失败 - 构建错误**\n\n${errorMsg}\n\n> 💡 请描述问题或发送"修复构建错误"让AI帮你解决`,
+                    timestamp: new Date()
+                })
+            } else {
+                message.error('部署失败：' + errorMsg)
+            }
         }
     } catch {
-        message.error('部署失败')
+        message.error('部署失败，请检查网络后重试')
     } finally {
         deploying.value = false
     }

@@ -5,14 +5,18 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 符号链接复制工具类
  * 解决Java复制文件时符号链接变成普通目录的问题
+ * Windows上优先使用Junction（mklink /J），不需要管理员权限
  * 
  * @author javierchen
  */
 public class SymlinkCopyUtil {
+    
+    private static final boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase().contains("windows");
     
     /**
      * 复制目录，保留符号链接
@@ -215,6 +219,92 @@ public class SymlinkCopyUtil {
     }
     
     /**
+     * 在Windows上使用 mklink /J 创建目录Junction
+     * Junction不需要管理员权限，是Windows上符号链接的最佳替代
+     * 
+     * @param link Junction链接路径
+     * @param target 目标目录路径（必须是绝对路径）
+     * @throws IOException 创建失败时抛出
+     */
+    public static void createJunction(Path link, Path target) throws IOException {
+        if (!IS_WINDOWS) {
+            throw new IOException("Junction仅支持Windows系统");
+        }
+        
+        // Junction要求目标为绝对路径
+        Path absoluteTarget = target.toAbsolutePath().normalize();
+        Path absoluteLink = link.toAbsolutePath().normalize();
+        
+        try {
+            ProcessBuilder pb = new ProcessBuilder(
+                "cmd.exe", "/c", "mklink", "/J", 
+                absoluteLink.toString(), 
+                absoluteTarget.toString()
+            );
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+            
+            boolean finished = process.waitFor(10, TimeUnit.SECONDS);
+            if (!finished) {
+                process.destroyForcibly();
+                throw new IOException("创建Junction超时: " + absoluteLink);
+            }
+            
+            int exitCode = process.exitValue();
+            if (exitCode != 0) {
+                String output = new String(process.getInputStream().readAllBytes());
+                throw new IOException("创建Junction失败(exitCode=" + exitCode + "): " + output.trim());
+            }
+            
+            // 验证Junction是否创建成功
+            if (!Files.exists(absoluteLink)) {
+                throw new IOException("Junction创建后路径不存在: " + absoluteLink);
+            }
+            
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("创建Junction被中断: " + absoluteLink, e);
+        }
+    }
+    
+    /**
+     * 智能创建目录链接：优先symlink，Windows上失败则回退到Junction
+     * 
+     * @param link 链接路径
+     * @param target 目标路径
+     * @throws IOException 所有方式都失败时抛出
+     */
+    public static void createDirectoryLink(Path link, Path target) throws IOException {
+        // 确保父目录存在
+        Path parent = link.getParent();
+        if (parent != null && !Files.exists(parent)) {
+            Files.createDirectories(parent);
+        }
+        
+        // 如果链接已存在，先删除
+        if (Files.exists(link, LinkOption.NOFOLLOW_LINKS)) {
+            Files.delete(link);
+        }
+        
+        // 先尝试符号链接
+        try {
+            Files.createSymbolicLink(link, target);
+            System.out.println("✅ 创建符号链接成功: " + link + " -> " + target);
+            return;
+        } catch (IOException | UnsupportedOperationException e) {
+            if (IS_WINDOWS) {
+                System.out.println("⚠️  符号链接创建失败（需要管理员权限），尝试使用Junction: " + e.getMessage());
+            } else {
+                throw new IOException("创建符号链接失败: " + link, e);
+            }
+        }
+        
+        // Windows回退到Junction
+        createJunction(link, target);
+        System.out.println("✅ 创建Junction成功: " + link + " -> " + target);
+    }
+    
+    /**
      * 检查路径是否为符号链接
      * @param path 要检查的路径
      * @return true如果是符号链接
@@ -237,7 +327,7 @@ public class SymlinkCopyUtil {
     }
     
     /**
-     * 创建符号链接
+     * 创建符号链接（兼容Windows Junction回退）
      * @param link 链接路径
      * @param target 目标路径
      * @throws IOException IO异常
@@ -254,7 +344,12 @@ public class SymlinkCopyUtil {
             Files.delete(link);
         }
         
-        Files.createSymbolicLink(link, target);
+        // 如果目标是目录，使用智能链接创建（支持Junction回退）
+        if (Files.isDirectory(target)) {
+            createDirectoryLink(link, target);
+        } else {
+            Files.createSymbolicLink(link, target);
+        }
     }
     
     /**
@@ -278,17 +373,17 @@ public class SymlinkCopyUtil {
         
         copyDirectorySkipDirs(templateSource, newProject, skipDirs);
         
-        // 2. 在新项目中创建 node_modules 符号链接
+        // 2. 在新项目中创建 node_modules 符号链接（或Junction）
         Path nodeModulesLink = newProject.resolve("node_modules");
         
         if (Files.exists(nodeModulesLink)) {
             Files.delete(nodeModulesLink);
         }
         
-        // 创建符号链接
-        createSymbolicLink(nodeModulesLink, sharedNodeModules);
+        // 使用智能链接创建（Windows上自动回退到Junction）
+        createDirectoryLink(nodeModulesLink, sharedNodeModules);
         
-        System.out.println("✅ 项目复制完成，符号链接已创建！");
+        System.out.println("✅ 项目复制完成，链接已创建！");
         System.out.println("📦 node_modules -> " + sharedNodeModules);
     }
 }

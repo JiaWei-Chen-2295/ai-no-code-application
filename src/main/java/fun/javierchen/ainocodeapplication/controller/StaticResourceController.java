@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.HandlerMapping;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 
 @Slf4j
@@ -167,10 +168,13 @@ public class StaticResourceController {
                 File distDir = new File(vueProjectDir, "dist");
                 if (!distDir.exists() || !distDir.isDirectory()) {
                     log.info("Vue项目dist目录不存在，开始构建: {}", vueProjectDir.getAbsolutePath());
-                    boolean buildSuccess = vueProjectBuilder.buildProject(vueProjectDir.getAbsolutePath());
-                    if (!buildSuccess) {
-                        log.error("Vue项目构建失败: {}", vueProjectDir.getAbsolutePath());
-                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+                    VueProjectBuilder.BuildResult buildResult = vueProjectBuilder.buildProjectWithResult(vueProjectDir.getAbsolutePath());
+                    if (!buildResult.isSuccess()) {
+                        log.error("Vue项目构建失败: {}, 错误: {}", vueProjectDir.getAbsolutePath(), buildResult.getErrorSummary());
+                        byte[] errorBytes = ("Vue项目构建失败:\n" + buildResult.getErrorSummary()).getBytes(StandardCharsets.UTF_8);
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                .contentType(org.springframework.http.MediaType.TEXT_PLAIN)
+                                .body(new org.springframework.core.io.ByteArrayResource(errorBytes));
                     }
                     log.info("Vue项目构建成功，生成dist目录: {}", distDir.getAbsolutePath());
                 } else {
@@ -381,9 +385,9 @@ public class StaticResourceController {
             File latestDistDir = new File(latestVueProjectDir, "dist");
             if (!latestDistDir.exists()) {
                 log.info("最新版本需要构建，开始构建: {}", latestVueProjectDir.getAbsolutePath());
-                boolean buildSuccess = vueProjectBuilder.buildProject(latestVueProjectDir.getAbsolutePath());
-                if (!buildSuccess) {
-                    log.error("最新版本构建失败");
+                VueProjectBuilder.BuildResult buildResult = vueProjectBuilder.buildProjectWithResult(latestVueProjectDir.getAbsolutePath());
+                if (!buildResult.isSuccess()) {
+                    log.error("最新版本构建失败: {}", buildResult.getErrorSummary());
                     return null;
                 }
                 log.info("最新版本构建成功");

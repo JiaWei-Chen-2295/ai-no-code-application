@@ -345,7 +345,7 @@ public class TemplateCopyUtil {
     }
     
     /**
-     * 安全地创建符号链接
+     * 安全地创建符号链接（Windows上回退到Junction）
      */
     private static void createSymlinkSafely(Path link, Path target, CopyConfig config) throws IOException {
         if (Files.exists(link, LinkOption.NOFOLLOW_LINKS)) {
@@ -356,7 +356,12 @@ public class TemplateCopyUtil {
             }
         }
         
-        Files.createSymbolicLink(link, target);
+        // 如果目标是目录，使用智能链接创建（支持Windows Junction回退）
+        if (Files.isDirectory(target)) {
+            SymlinkCopyUtil.createDirectoryLink(link, target);
+        } else {
+            Files.createSymbolicLink(link, target);
+        }
     }
     
     /**
@@ -398,7 +403,7 @@ public class TemplateCopyUtil {
         
         CopyResult result = copyTemplate(template, target, config);
         
-        // 2. 创建node_modules符号链接
+        // 2. 创建node_modules链接（symlink或Junction）
         try {
             Path nodeModulesLink = target.resolve("node_modules");
             
@@ -406,18 +411,17 @@ public class TemplateCopyUtil {
                 Files.delete(nodeModulesLink);
             }
             
-            // 计算相对路径
-            Path relativePath = nodeModulesLink.getParent().relativize(sharedNodeModules);
-            Files.createSymbolicLink(nodeModulesLink, relativePath);
+            // 使用智能链接创建（Windows上自动回退到Junction）
+            SymlinkCopyUtil.createDirectoryLink(nodeModulesLink, sharedNodeModules);
             
             result.incrementSymlinks();
             
             System.out.println("✅ Vue模板复制完成！");
-            System.out.println("📦 node_modules -> " + relativePath);
+            System.out.println("📦 node_modules -> " + sharedNodeModules);
             System.out.println("💡 提示：如果node_modules不存在，请运行 npm install");
             
         } catch (IOException e) {
-            System.out.println("⚠️  无法创建node_modules符号链接: " + e.getMessage());
+            System.out.println("❌ 无法创建node_modules链接: " + e.getMessage());
             System.out.println("💡 请手动运行: npm install");
         }
         
@@ -451,7 +455,7 @@ public class TemplateCopyUtil {
         
         CopyResult result = copyTemplate(source, target, config);
         
-        // 2. 创建node_modules符号链接
+        // 2. 创建node_modules链接（symlink或Junction）
         try {
             Path nodeModulesLink = target.resolve("node_modules");
             
@@ -459,18 +463,17 @@ public class TemplateCopyUtil {
                 Files.delete(nodeModulesLink);
             }
             
-            // 计算相对路径
-            Path relativePath = nodeModulesLink.getParent().relativize(sharedNodeModules);
-            Files.createSymbolicLink(nodeModulesLink, relativePath);
+            // 使用智能链接创建（Windows上自动回退到Junction）
+            SymlinkCopyUtil.createDirectoryLink(nodeModulesLink, sharedNodeModules);
             
             result.incrementSymlinks();
             
             System.out.println("✅ Vue项目版本复制完成！");
-            System.out.println("📦 node_modules -> " + relativePath);
+            System.out.println("📦 node_modules -> " + sharedNodeModules);
             System.out.println("💡 提示：从上一版本复制，保留了所有代码更改");
             
         } catch (IOException e) {
-            System.out.println("⚠️  无法创建node_modules符号链接: " + e.getMessage());
+            System.out.println("❌ 无法创建node_modules链接: " + e.getMessage());
             System.out.println("💡 请手动运行: npm install");
         }
         

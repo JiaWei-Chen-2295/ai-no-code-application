@@ -37,6 +37,8 @@ export default defineConfig({
     },
     // 禁用CSS代码分割
     cssCodeSplit: false,
+    // 跳过压缩，加速构建（AI生成的预览代码不需要压缩）
+    minify: false,
     // 设置chunk大小警告限制
     chunkSizeWarningLimit: 1000
   }

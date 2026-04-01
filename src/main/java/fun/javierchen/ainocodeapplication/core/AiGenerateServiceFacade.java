@@ -52,6 +52,12 @@ public class AiGenerateServiceFacade {
 
     @Resource
     private AiCodeGeneratorServiceFactory aiCodeGeneratorServiceFactory;
+
+    @Resource
+    private fun.javierchen.ainocodeapplication.core.builder.VueProjectBuilder vueProjectBuilder;
+
+    private static final int MAX_BUILD_FIX_ATTEMPTS = 1;
+
     @Resource
     private AppService appService;
 
@@ -166,7 +172,6 @@ public class AiGenerateServiceFacade {
      * @return
      */
     private Flux<String> generateAndSaveVueProjectCodeStream(String userMessage, Long appId, BiConsumer<CodeParseResult, Integer> onCompleteCallback, User loginUser) {
-//        try {
         // 1. 先获取版本号并创建项目目录结构（在AI生成之前）
         int version = appService.getNextVersion(appId);
         File projectDir = appService.saveVueProject(appId, version);
@@ -180,9 +185,13 @@ public class AiGenerateServiceFacade {
         Flux<String> result = TokenStream2FluxAdaptor.adapt(tokenStream);
 
         // 3. 将版本号传递给处理器，确保数据库版本号与文件系统版本号一致
-        return streamHandlerExecutor.doExecute(result, chatHistoryService, appId, loginUser, CodeGenTypeEnum.VUE_PROJECT, version)
+        Flux<String> aiGenerationStream = streamHandlerExecutor.doExecute(result, chatHistoryService, appId, loginUser, CodeGenTypeEnum.VUE_PROJECT, version);
+
+        // 4. 在AI生成完成后，尝试构建并在失败时自动修复
+        Flux<String> buildAndFixStream = Flux.defer(() -> attemptBuildAndFix(projectDir, appId, version, loginUser, 0));
+
+        return Flux.concat(aiGenerationStream, buildAndFixStream)
                 .doOnComplete(() -> {
-                    // 4. 流完成后调用回调，传递版本号
                     if (onCompleteCallback != null) {
                         CodeParseResult parseResult = new CodeParseResult(true, true, true, null);
                         onCompleteCallback.accept(parseResult, version);
@@ -198,43 +207,64 @@ public class AiGenerateServiceFacade {
                         onCompleteCallback.accept(parseResult, version);
                     }
                 });
-        // 3. 处理生成流程
-//            StringBuilder sb = new StringBuilder();
-//            return result.doOnNext(sb::append)
-//                    .doOnComplete(() -> {
-//                        try {
-//                            log.info("Vue项目AI生成完成，项目目录: {}, 版本: {}",
-//                                    projectDir.getAbsolutePath(), version);
-//
-//                            // 通过回调返回结果
-//                            if (onCompleteCallback != null) {
-//                                CodeParseResult parseResult = new CodeParseResult(true, true, true, null);
-//                                onCompleteCallback.accept(parseResult, version);
-//                            }
-//                        } catch (Exception e) {
-//                            log.error("Vue项目生成回调处理失败: {}", e.getMessage(), e);
-//                            if (onCompleteCallback != null) {
-//                                CodeParseResult parseResult = new CodeParseResult(false, false, false,
-//                                        "生成回调处理失败: " + e.getMessage());
-//                                onCompleteCallback.accept(parseResult, version);
-//                            }
-//                        }
-//                    })
-//                    .doOnError(error -> {
-//                        log.error("Vue项目AI生成失败: {}", error.getMessage(), error);
-//                        if (onCompleteCallback != null) {
-//                            CodeParseResult parseResult = new CodeParseResult(false, false, false,
-//                                    "AI生成失败: " + error.getMessage());
-//                            onCompleteCallback.accept(parseResult, version);
-//                        }
-//                    });
-//
-//        } catch (Exception e) {
-//            log.error("Vue项目目录创建失败: {}", e.getMessage(), e);
-//
-//            // 返回错误流
-//            return Flux.error(new RuntimeException("Vue项目目录创建失败: " + e.getMessage(), e));
-//        }
+    }
+
+    /**
+     * 尝试构建Vue项目，如果失败则让AI自动修复后重试
+     *
+     * @param projectDir 项目目录
+     * @param appId      应用ID
+     * @param version    版本号
+     * @param loginUser  当前用户
+     * @param attempt    当前尝试次数（从0开始）
+     * @return 构建状态消息流
+     */
+    private Flux<String> attemptBuildAndFix(File projectDir, Long appId, int version, User loginUser, int attempt) {
+        return Flux.defer(() -> {
+            log.info("尝试构建Vue项目 (第{}次): {}", attempt + 1, projectDir.getAbsolutePath());
+
+            var buildResult = vueProjectBuilder.buildProjectWithResult(projectDir.getAbsolutePath());
+
+            if (buildResult.isSuccess()) {
+                log.info("Vue项目构建成功: {}", projectDir.getAbsolutePath());
+                return Flux.just("\n\n> ✅ **项目构建成功**\n\n");
+            }
+
+            String errorSummary = buildResult.getErrorSummary();
+            log.warn("Vue项目构建失败 (第{}次): {}", attempt + 1, errorSummary);
+
+            if (attempt >= MAX_BUILD_FIX_ATTEMPTS) {
+                // 达到最大重试次数，返回错误信息
+                return Flux.just("\n\n> ⚠️ **项目构建失败**，已尝试自动修复但未成功。部署时将重新尝试构建。\n\n> 错误摘要: " + truncate(errorSummary, 500) + "\n\n");
+            }
+
+            // 构建失败，让AI修复
+            String fixMessage = String.format(
+                    "项目构建失败（npm run build），请根据以下错误信息修复代码。只修改有问题的文件，不要重新创建所有文件。\n\n构建错误输出:\n```\n%s\n```",
+                    truncate(errorSummary, 1500)
+            );
+
+            Flux<String> statusMessage = Flux.just("\n\n> ⚠️ **构建失败，正在自动修复...**\n\n");
+
+            // 调用AI修复
+            var aiService = aiCodeGeneratorServiceFactory.getAiCodeGeneratorService(appId, CodeGenTypeEnum.VUE_PROJECT);
+            TokenStream fixTokenStream = aiService.generateVueProjectCodeStream(appId, fixMessage);
+            Flux<String> fixResult = TokenStream2FluxAdaptor.adapt(fixTokenStream);
+            Flux<String> fixStream = streamHandlerExecutor.doExecute(fixResult, chatHistoryService, appId, loginUser, CodeGenTypeEnum.VUE_PROJECT, version);
+
+            // 修复完成后重新尝试构建
+            Flux<String> retryBuildStream = Flux.defer(() -> attemptBuildAndFix(projectDir, appId, version, loginUser, attempt + 1));
+
+            return Flux.concat(statusMessage, fixStream, retryBuildStream);
+        });
+    }
+
+    /**
+     * 截断字符串到指定最大长度
+     */
+    private static String truncate(String str, int maxLen) {
+        if (str == null) return "";
+        return str.length() <= maxLen ? str : "..." + str.substring(str.length() - maxLen);
     }
 
     /**

@@ -325,9 +325,12 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         // 7.1 如果是Vue项目，先执行构建
         if (isVueProject) {
             log.info("检测到Vue项目，开始执行构建...");
-            boolean buildSuccess = vueProjectBuilder.buildProject(sourceDirPath);
-            if (!buildSuccess) {
-                throw new BusinessException(ErrorCode.SYSTEM_ERROR, "Vue项目构建失败，请检查项目代码");
+            VueProjectBuilder.BuildResult buildResult = vueProjectBuilder.buildProjectWithResult(sourceDirPath);
+            if (!buildResult.isSuccess()) {
+                String errorSummary = buildResult.getErrorSummary();
+                log.error("Vue项目构建失败，错误输出：{}", errorSummary);
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR, 
+                        "Vue项目构建失败: " + (errorSummary.isEmpty() ? "未知错误" : errorSummary));
             }
             log.info("Vue项目构建成功");
         }
