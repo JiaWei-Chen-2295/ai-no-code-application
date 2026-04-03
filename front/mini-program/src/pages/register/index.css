@@ -1,0 +1,82 @@
+.register-container {
+  min-height: 100vh;
+  background: #1a1c1c;
+  padding: 80rpx 44px 64rpx;
+}
+
+.register-header {
+  margin-bottom: 80rpx;
+}
+
+.register-title {
+  font-size: 56rpx;
+  font-weight: 800;
+  color: #ffc107;
+  letter-spacing: -0.02em;
+}
+
+.register-form {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 48rpx 32px;
+}
+
+.input-group {
+  margin-bottom: 32rpx;
+}
+
+.input-label {
+  font-size: 26rpx;
+  color: #7a7a7a;
+  display: block;
+  margin-bottom: 12rpx;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.input-field {
+  width: 100%;
+  height: 88rpx;
+  background: #f4f4f4;
+  border-radius: 8px;
+  padding: 0 24rpx;
+  font-size: 28rpx;
+  color: #1a1c1c;
+}
+
+.error-text {
+  color: #d32f2f;
+  font-size: 24rpx;
+  display: block;
+  margin-bottom: 24rpx;
+  text-align: center;
+}
+
+.register-btn {
+  width: 100%;
+  height: 96rpx;
+  background: linear-gradient(135deg, #785900 0%, #ffc107 100%);
+  color: #ffffff;
+  border-radius: 48rpx;
+  font-size: 32rpx;
+  font-weight: 700;
+  border: none;
+  margin-top: 16rpx;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.login-link {
+  text-align: center;
+  margin-top: 40rpx;
+  font-size: 26rpx;
+  color: #7a7a7a;
+}
+
+.link {
+  color: #785900;
+  margin-left: 8rpx;
+  font-weight: 600;
+}

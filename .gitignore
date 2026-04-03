@@ -22,7 +22,7 @@ target/
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
-/dist/
+dist/
 /nbdist/
 /.nb-gradle/
 build/
@@ -31,5 +31,10 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Node ###
+node_modules/
+.swc/
+
 ### 生成的代码文件 ###
 /tmp/

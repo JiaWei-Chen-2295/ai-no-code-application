@@ -1,0 +1,72 @@
+.version-list {
+  margin-top: 24rpx;
+}
+
+.version-item {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 28rpx;
+  margin-bottom: 20rpx;
+}
+
+.version-item.active {
+  background-color: #1a1c1c;
+}
+
+.version-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8rpx;
+}
+
+.version-number {
+  font-size: 32rpx;
+  font-weight: 800;
+  color: #1a1c1c;
+  margin-right: 16rpx;
+}
+
+.version-item.active .version-number {
+  color: #ffc107;
+}
+
+.deployed-tag {
+  background: rgba(255, 193, 7, 0.15);
+  padding: 4px 12px;
+  border-radius: 9999px;
+}
+
+.version-item.active .deployed-tag {
+  background: rgba(255, 193, 7, 0.25);
+}
+
+.tag-text {
+  font-size: 20rpx;
+  color: #785900;
+  font-weight: 600;
+}
+
+.version-item.active .tag-text {
+  color: #ffc107;
+}
+
+.version-time {
+  font-size: 24rpx;
+  color: #a0a0a0;
+  margin-bottom: 8rpx;
+  display: block;
+}
+
+.version-message {
+  font-size: 28rpx;
+  color: #7a7a7a;
+  line-height: 1.4;
+}
+
+.version-item.active .version-message {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.version-item.active .version-time {
+  color: rgba(255, 255, 255, 0.4);
+}

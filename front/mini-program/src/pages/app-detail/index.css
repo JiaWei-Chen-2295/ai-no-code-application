@@ -1,0 +1,137 @@
+.detail-container {
+  min-height: 100vh;
+  background: #f9f9f9;
+}
+
+.detail-cover {
+  width: 100%;
+  height: 480rpx;
+  background: #eeeeee;
+}
+
+.detail-content {
+  background: #ffffff;
+  border-radius: 16px 16px 0 0;
+  margin-top: -32rpx;
+  padding: 48rpx 44px;
+  position: relative;
+}
+
+.detail-title {
+  font-size: 48rpx;
+  font-weight: 800;
+  color: #1a1c1c;
+  display: block;
+  margin-bottom: 16rpx;
+  letter-spacing: -0.02em;
+}
+
+.detail-meta {
+  display: flex;
+  gap: 32rpx;
+  margin-bottom: 32rpx;
+}
+
+.author,
+.type {
+  font-size: 26rpx;
+  color: #7a7a7a;
+}
+
+.detail-desc {
+  font-size: 28rpx;
+  color: #7a7a7a;
+  line-height: 1.8;
+  display: block;
+  margin-bottom: 48rpx;
+}
+
+.version-section {
+  margin-bottom: 48rpx;
+}
+
+.section-title {
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #7a7a7a;
+  display: block;
+  margin-bottom: 20rpx;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.version-list {
+  display: flex;
+  gap: 16rpx;
+  flex-wrap: wrap;
+}
+
+.version-item {
+  padding: 16rpx 24rpx;
+  background: #f4f4f4;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.version-item.active {
+  background: #1a1c1c;
+}
+
+.version-num {
+  font-size: 26rpx;
+  color: #1a1c1c;
+  font-weight: 600;
+}
+
+.version-item.active .version-num {
+  color: #ffc107;
+}
+
+.deployed-tag {
+  font-size: 20rpx;
+  color: #785900;
+  background: rgba(255, 193, 7, 0.15);
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-weight: 600;
+}
+
+.action-btns {
+  display: flex;
+  gap: 24rpx;
+  padding-top: 24rpx;
+}
+
+.chat-btn,
+.preview-btn {
+  flex: 1;
+  height: 96rpx;
+  border-radius: 48rpx;
+  font-size: 30rpx;
+  font-weight: 700;
+  border: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.chat-btn {
+  background: linear-gradient(135deg, #785900 0%, #ffc107 100%);
+  color: #ffffff;
+}
+
+.preview-btn {
+  background: #1a1c1c;
+  color: #ffc107;
+}
+
+.loading,
+.error {
+  text-align: center;
+  padding: 120rpx;
+  color: #a0a0a0;
+  font-size: 28rpx;
+  display: block;
+}

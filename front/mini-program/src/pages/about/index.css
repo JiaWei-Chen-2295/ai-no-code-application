@@ -1,0 +1,89 @@
+.about-container {
+  min-height: 100vh;
+  background-color: #f9f9f9;
+}
+
+.about-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 112rpx 0;
+  background-color: #1a1c1c;
+}
+
+.app-logo {
+  width: 144rpx;
+  height: 144rpx;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #785900 0%, #ffc107 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 32rpx;
+}
+
+.logo-text {
+  font-size: 48rpx;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.app-name {
+  font-size: 40rpx;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 8rpx;
+}
+
+.app-version {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.about-content {
+  margin-top: 24rpx;
+  background-color: #ffffff;
+  padding: 0 44px;
+}
+
+.about-section {
+  padding: 40rpx 0;
+  background: #ffffff;
+}
+
+.about-section:nth-child(even) {
+  background: #f4f4f4;
+  margin: 0 -44px;
+  padding: 40rpx 44px;
+}
+
+.section-title {
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #7a7a7a;
+  margin-bottom: 16rpx;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.section-content {
+  font-size: 28rpx;
+  color: #1a1c1c;
+  line-height: 1.6;
+  margin-bottom: 8rpx;
+}
+
+.about-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 32rpx;
+  text-align: center;
+  background: #f9f9f9;
+}
+
+.footer-text {
+  font-size: 24rpx;
+  color: #a0a0a0;
+}

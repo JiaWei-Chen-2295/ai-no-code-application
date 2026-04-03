@@ -1,0 +1,144 @@
+.app-manage-container {
+  min-height: 100vh;
+  background-color: #f9f9f9;
+}
+
+.search-section {
+  display: flex;
+  padding: 24rpx 44px;
+  background-color: #ffffff;
+  margin-bottom: 24rpx;
+}
+
+.search-input {
+  flex: 1;
+  height: 80rpx;
+  padding: 0 24rpx;
+  font-size: 28rpx;
+  color: #1a1c1c;
+  background: #f4f4f4;
+  border-radius: 8px 0 0 8px;
+  box-sizing: border-box;
+}
+
+.search-btn {
+  width: 128rpx;
+  height: 80rpx;
+  background: linear-gradient(135deg, #785900 0%, #ffc107 100%);
+  border-radius: 0 8px 8px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.search-btn-text {
+  font-size: 28rpx;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.app-list {
+  flex: 1;
+  padding: 0 44px;
+}
+
+.loading-state,
+.empty-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  font-size: 28px;
+  color: #a0a0a0;
+}
+
+.app-item {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 32rpx;
+  margin-bottom: 24rpx;
+}
+
+.app-info {
+  margin-bottom: 20rpx;
+}
+
+.app-name {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #1a1c1c;
+  margin-bottom: 8rpx;
+  display: block;
+}
+
+.app-type {
+  font-size: 24rpx;
+  color: #785900;
+  margin-bottom: 8rpx;
+  display: block;
+  font-weight: 600;
+}
+
+.app-time {
+  font-size: 24rpx;
+  color: #a0a0a0;
+}
+
+.app-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16rpx;
+}
+
+.action-btn {
+  padding: 12px 24px;
+  border-radius: 8px;
+}
+
+.edit-btn {
+  background-color: #eeeeee;
+}
+
+.delete-btn {
+  background-color: rgba(211, 47, 47, 0.08);
+}
+
+.action-text {
+  font-size: 24rpx;
+}
+
+.edit-btn .action-text {
+  color: #1a1c1c;
+}
+
+.delete-btn .action-text {
+  color: #d32f2f;
+}
+
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 44px;
+  background-color: #ffffff;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+.page-btn {
+  padding: 16px 32px;
+  background-color: #eeeeee;
+  border-radius: 8px;
+}
+
+.page-btn.disabled {
+  opacity: 0.4;
+}
+
+.page-info {
+  font-size: 28rpx;
+  color: #1a1c1c;
+  font-weight: 600;
+}

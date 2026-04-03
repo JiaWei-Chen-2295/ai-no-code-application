@@ -1,0 +1,32 @@
+{
+  "name": "ai-no-code-mini-program",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI No-Code Application Mini Program",
+  "scripts": {
+    "dev:weapp": "node --openssl-legacy-provider ./node_modules/@tarojs/cli/bin/taro build --type weapp --watch",
+    "build:weapp": "node --openssl-legacy-provider ./node_modules/@tarojs/cli/bin/taro build --type weapp && node ./scripts/cleanup-weapp-output.js"
+  },
+  "dependencies": {
+    "@tarojs/components": "^3.6.35",
+    "@tarojs/plugin-framework-react": "^3.6.35",
+    "@tarojs/plugin-platform-weapp": "^3.6.35",
+    "@tarojs/react": "^3.6.35",
+    "@tarojs/runtime": "^3.6.35",
+    "@tarojs/taro": "^3.6.35",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.24.0",
+    "@babel/plugin-transform-typescript": "^7.28.6",
+    "@babel/preset-react": "^7.28.5",
+    "@babel/preset-typescript": "^7.28.5",
+    "@tarojs/cli": "^3.6.39",
+    "@tarojs/mini-runner": "^3.6.39",
+    "@tarojs/webpack5-runner": "^3.6.39",
+    "@types/react": "^18.3.0",
+    "babel-preset-taro": "^3.6.39",
+    "typescript": "^5.4.0"
+  }
+}

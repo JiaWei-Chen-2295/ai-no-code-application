@@ -1,0 +1,12 @@
+{
+  "appid": "YOUR_APPID_HERE",
+  "compileType": "miniprogram",
+  "miniprogramRoot": "dist/weapp/",
+  "srcMiniprogramRoot": "dist/weapp/",
+  "setting": {
+    "es6": false,
+    "enhance": true,
+    "postcss": true,
+    "minified": true
+  }
+}

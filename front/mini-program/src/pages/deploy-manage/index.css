@@ -1,0 +1,142 @@
+.deploy-manage-container {
+  min-height: 100vh;
+  background-color: #f9f9f9;
+}
+
+.loading-state,
+.error-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  font-size: 28px;
+  color: #a0a0a0;
+}
+
+.app-info-section {
+  background-color: #ffffff;
+  padding: 44px;
+  margin-bottom: 24rpx;
+}
+
+.app-name {
+  font-size: 40rpx;
+  font-weight: 800;
+  color: #1a1c1c;
+  margin-bottom: 8rpx;
+  display: block;
+  letter-spacing: -0.02em;
+}
+
+.app-type {
+  font-size: 28rpx;
+  color: #7a7a7a;
+  margin-bottom: 8rpx;
+  display: block;
+}
+
+.app-version {
+  font-size: 28rpx;
+  color: #785900;
+  font-weight: 600;
+}
+
+.deploy-status-section {
+  background-color: #ffffff;
+  padding: 44px;
+  margin-bottom: 24rpx;
+}
+
+.section-title {
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #7a7a7a;
+  margin-bottom: 24rpx;
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16rpx;
+  padding: 16rpx 0;
+}
+
+.status-label {
+  font-size: 28rpx;
+  color: #7a7a7a;
+}
+
+.status-value {
+  font-size: 28rpx;
+  color: #1a1c1c;
+  font-weight: 600;
+}
+
+.deploy-url-section {
+  background-color: #ffffff;
+  padding: 44px;
+  margin-bottom: 24rpx;
+}
+
+.url-box {
+  display: flex;
+  align-items: center;
+  background-color: #f4f4f4;
+  border-radius: 8px;
+  padding: 20rpx 24rpx;
+}
+
+.url-text {
+  flex: 1;
+  font-size: 24rpx;
+  color: #1a1c1c;
+  word-break: break-all;
+}
+
+.copy-btn {
+  background: linear-gradient(135deg, #785900 0%, #ffc107 100%);
+  padding: 8px 16px;
+  border-radius: 8px;
+  margin-left: 16rpx;
+}
+
+.copy-text {
+  font-size: 24rpx;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.deploy-actions {
+  padding: 44px;
+}
+
+.deploy-btn {
+  width: 100%;
+  height: 96rpx;
+  background: linear-gradient(135deg, #785900 0%, #ffc107 100%);
+  color: #ffffff;
+  font-size: 32rpx;
+  font-weight: 700;
+  border-radius: 48rpx;
+  margin-bottom: 24rpx;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.cancel-btn {
+  width: 100%;
+  height: 96rpx;
+  background-color: #ffffff;
+  color: #d32f2f;
+  font-size: 32rpx;
+  font-weight: 600;
+  border-radius: 48rpx;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}

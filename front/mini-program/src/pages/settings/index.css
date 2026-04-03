@@ -1,0 +1,32 @@
+.settings-container {
+  min-height: 100vh;
+  background-color: #f9f9f9;
+}
+
+.settings-section {
+  margin-top: 24rpx;
+  background-color: #ffffff;
+}
+
+.settings-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 40rpx;
+  background: #ffffff;
+}
+
+.settings-item:nth-child(even) {
+  background: #f4f4f4;
+}
+
+.item-text {
+  font-size: 30rpx;
+  color: #1a1c1c;
+  font-weight: 500;
+}
+
+.item-arrow {
+  font-size: 28rpx;
+  color: #d4c5ab;
+}
