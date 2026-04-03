@@ -1,100 +1,537 @@
- 一、主色调系统（降低饱和度版本 - 更柔和舒适）
+# AppCraft Theme
 
-主强调色
-#D4AF37（柔和金黄）- 降低饱和度
-按钮高亮、重要提示、CTA按钮背景
-辅助亮绿
-#6BB892（柔和翡翠绿）- 降低饱和度
-成功状态、进度条、次要按钮
-主绿色
-#4A9D75（深翡翠绿）- 降低饱和度
-导航栏、标题背景、品牌主色
-中间青蓝
-#478981（柔和青蓝）- 降低饱和度
-卡片边框、悬停状态、信息模块背景
-深蓝绿
-#507E96（雾霾蓝）- 降低饱和度
-侧边栏、页脚、文字强调色
-深灰蓝
-#2F4858（石板灰）- 保持不变
-背景底色、文字颜色、阴影/蒙层
+## 1. Theme Positioning
 
-配色优化说明：
-- 所有颜色饱和度降低 30-40%
-- 保持原有色相，更加柔和
-- 减少视觉疲劳，适合长时间使用
-- 更专业、更现代的配色风格
+Theme name: `Creator Studio`
 
-—
+Product feeling:
+- Clean
+- Refined
+- Trustworthy
+- Calm futuristic
+- Workbench-like
 
-🖥️ 二、页面布局与组件风格规范（降低饱和度版）
+This product should feel like an AI application studio, not a generic admin panel and not an over-decorated AI landing page.
+The interface goal is to let users feel they can immediately start creating, previewing, iterating, and publishing.
 
-页面背景色：
-默认背景：#F2F7F9（淡雾蓝）或 #F8F9FA（淡灰），柔和护眼
-内容区域卡片：白色或半透白（rgba(255,255,255,0.95)），搭配轻微阴影提升层次感
-导航栏 / 头部：
-背景色：#4A9D75（柔和翡翠绿）- 降低饱和度
-文字颜色：白色（#FFFFFF）或 #F8F9FA
-悬停效果：#478981（柔和青蓝）+ 白色文字
-Logo/品牌名：可使用 #D4AF37（柔和金黄）作为点缀色
-主要按钮（Primary Button）：
-正常态：#D4AF37（柔和金黄） + 深色文字（#2F4858）
-悬停态：#B8952C（深金黄） + 深色文字
-禁用态：#D4AF37 透明度 40%
-次要按钮（Secondary Button）：
-正常态：白色背景 + #4A9D75 边框 + #4A9D75 文字
-悬停态：#4A9D75 背景 + 白色文字
-输入框 & 表单元素：
-边框：#B3DBD8（淡青蓝）
-聚焦态边框：#D4AF37（柔和金黄）
-错误状态边框：#C67777（柔和红）
-卡片组件：
-背景色：白色或浅灰（#FFFFFF / #F8F9FA）
-边框：#B3DBD8（淡青蓝）1-2px solid
-标题文字：#507E96（雾霾蓝）
-内容文字：#2F4858（深灰蓝）或 #3c4043
-进度条 / 状态条：
-成功：#6BB892（柔和翡翠绿）
-进行中：#4A9D75（深翡翠绿）
-警告：#D4A04A（柔和黄）
-错误：#B05555（柔和红）
-文字颜色：
-主标题：#507E96（雾霾蓝）或 #2F4858（深灰蓝）
-正文：#3c4043 或 #5f6368
-辅助说明：#9aa0a6
-链接/可点击：#4A9D75 或 #478981，悬停加下划线
-—
+Design keywords:
+- AI workspace
+- Showcase-driven
+- Soft technology
+- Clear hierarchy
+- Lightweight premium
 
-✨ 三、字体与排版建议
+One-sentence brand feeling:
 
-字体族：推荐无衬线字体，如：
-中文：思源黑体 / 方正兰亭黑 / 苹方 / PingFang SC
-英文：Inter / Segoe UI / Roboto / Helvetica Neue
-主标题：24–32px，加粗（600-700），#507E96（雾霾蓝）
-副标题：18–22px，中等粗细（500-600），#2F4858（深灰蓝）
-正文：16px，行高 1.6，#3c4043（深灰）
-小字说明：14px，#9aa0a6（中灰）
-—
+> A quiet, polished AI product studio where ideas become usable apps fast.
 
-📦 四、动效与交互建议
+---
 
-按钮点击：轻微缩放（scale: 0.98）+ 颜色过渡动画（0.15s ease）
-卡片悬停：轻微抬升（box-shadow: 0 4px 12px rgba(0,0,0,0.08)）- 阴影更柔和
-页面切换：淡入淡出或滑动过渡（opacity + transform，0.3s ease）
-加载动画：使用 #D4AF37（柔和金黄）和 #4A9D75（翡翠绿）交替旋转圆环或脉冲波
+## 2. Core Design Principles
 
-🎨 五、配色对比（优化前 vs 优化后）
+### 2.1 Experience Priorities
 
-| 用途 | 优化前（高饱和） | 优化后（低饱和） | 说明 |
-|------|----------------|----------------|------|
-| 主强调色 | #FFDC00 | #D4AF37 | 降低饱和度40% |
-| 辅助绿色 | #90CE42 | #6BB892 | 更柔和的绿色 |
-| 主绿色 | #1BB36F | #4A9D75 | 降低饱和度35% |
-| 深青蓝 | #009186 | #478981 | 降低饱和度30% |
-| 深蓝绿 | #006C7D | #507E96 | 降低饱和度30% |
+Every page should optimize for these priorities in order:
 
-视觉效果：
-- ✅ 减少视觉疲劳，适合长时间使用
-- ✅ 更专业、更现代的配色风格
-- ✅ 保持品牌识别度，同时更加优雅
-- ✅ 更好的可读性和层次感
+1. Clarity
+2. Actionability
+3. Visual comfort
+4. Delight
+
+### 2.2 Interface Rules
+
+- The interface must guide the user toward the next action.
+- Important actions should stand out through hierarchy, not visual noise.
+- Use whitespace, typography, and layout before using strong borders or heavy gradients.
+- Product pages should emphasize creation results, not only configuration fields.
+- Keep visual rhythm calm and consistent across all pages.
+
+### 2.3 Avoid
+
+- Large areas of flat pure white without hierarchy
+- Too many saturated colors on the same screen
+- Heavy 2px to 3px borders on every card
+- Excessive gradients as decoration
+- Emoji-style visuals as core UI language
+- Pages that look like backend tables when they should feel like creative tools
+
+---
+
+## 3. Visual Direction
+
+### 3.1 Overall Mood
+
+The UI should combine:
+- A soft warm-gray background
+- Frosted translucent surfaces
+- Deep teal primary actions
+- Warm apricot/gold accent highlights
+- Gentle shadows and restrained motion
+
+The result should feel more premium and more product-focused than the current mixed green-blue-yellow palette.
+
+### 3.2 Visual Metaphor
+
+The product should feel like a creative desk:
+- Background is calm and unobtrusive
+- Cards are like glass sheets or project canvases
+- Actions are like focused tools
+- Previews are treated as hero content
+
+---
+
+## 4. Color System
+
+### 4.1 Semantic Palette
+
+Primary colors:
+- `--color-primary-50: #e9f5f3`
+- `--color-primary-100: #d3ebe7`
+- `--color-primary-200: #a6d7cf`
+- `--color-primary-300: #79c3b7`
+- `--color-primary-400: #45a99d`
+- `--color-primary-500: #0f766e`
+- `--color-primary-600: #0c625c`
+- `--color-primary-700: #0b4f4a`
+- `--color-primary-800: #083c38`
+- `--color-primary-900: #052927`
+
+Accent colors:
+- `--color-accent-50: #fdf5eb`
+- `--color-accent-100: #fbe8c9`
+- `--color-accent-200: #f8d59f`
+- `--color-accent-300: #f4b860`
+- `--color-accent-400: #e7a64a`
+- `--color-accent-500: #d28e35`
+
+Neutral colors:
+- `--color-bg: #f6f7f4`
+- `--color-bg-elevated: #fbfbf9`
+- `--color-surface: rgba(255, 255, 255, 0.78)`
+- `--color-surface-solid: #ffffff`
+- `--color-line: rgba(19, 32, 38, 0.08)`
+- `--color-line-strong: rgba(19, 32, 38, 0.14)`
+- `--color-text: #132026`
+- `--color-text-soft: #5f6b73`
+- `--color-text-muted: #8a949b`
+
+State colors:
+- `--color-success: #3f8f72`
+- `--color-warning: #d79a3c`
+- `--color-error: #b85c5c`
+- `--color-info: #4c89a8`
+
+### 4.2 Usage Rules
+
+- Primary teal is used for brand anchors, major CTAs, active states, and focused interactions.
+- Accent apricot is used sparingly for highlights, featured labels, and special conversion moments.
+- Neutral colors must dominate the screen area.
+- Accent should never overpower primary.
+- Avoid using more than one bright highlight color in the same component.
+
+### 4.3 Recommended Ratios
+
+- 70% neutral background and surfaces
+- 20% text and structural contrast
+- 10% branded color and interaction highlights
+
+---
+
+## 5. Surface and Depth
+
+### 5.1 Background
+
+Default page background:
+- Use `--color-bg`
+- Allow subtle radial glow or soft gradient in hero areas only
+
+Recommended background treatments:
+- `linear-gradient(180deg, #f7f7f4 0%, #f2f5f3 100%)`
+- subtle radial highlight behind hero or preview area
+
+### 5.2 Cards
+
+Card style:
+- Background: `--color-surface`
+- Border: `1px solid --color-line`
+- Radius: 20px to 28px
+- Shadow: soft and blurred, never too dark
+- Optional backdrop blur for major containers
+
+Recommended card shadow:
+
+```css
+box-shadow:
+  0 10px 30px rgba(19, 32, 38, 0.06),
+  0 2px 8px rgba(19, 32, 38, 0.04);
+backdrop-filter: blur(14px);
+```
+
+Card behavior:
+- Hover can lift slightly
+- Border color may strengthen slightly on hover
+- Do not use thick outlines as the default state
+
+### 5.3 Panels
+
+Major workspace panels such as prompt input, chat canvas, preview area:
+- Should feel larger, calmer, and more architectural than regular cards
+- Use stronger radius and clearer spacing
+- Use internal section dividers rather than heavy outer borders
+
+---
+
+## 6. Typography
+
+### 6.1 Font Family
+
+Recommended font stack:
+
+- Chinese heading: `HarmonyOS Sans SC`, `Alibaba PuHuiTi 3.0`, `PingFang SC`, sans-serif
+- Body: `PingFang SC`, `Noto Sans SC`, `Segoe UI`, sans-serif
+- Monospace: `JetBrains Mono`, `Fira Code`, `Consolas`, monospace
+
+### 6.2 Type Tone
+
+- Headlines should feel confident and composed
+- Body text should remain highly readable
+- Metadata should be quiet but not faint
+
+### 6.3 Type Scale
+
+- Display title: `48px - 64px`, weight `700`
+- H1: `36px - 48px`, weight `700`
+- H2: `28px - 32px`, weight `600`
+- H3: `20px - 24px`, weight `600`
+- Body large: `18px`
+- Body: `16px`
+- Small: `14px`
+- Caption: `12px - 13px`
+
+### 6.4 Text Colors
+
+- Primary title text: `--color-text`
+- Secondary headings: `--color-primary-700`
+- Body text: `--color-text-soft`
+- Meta text: `--color-text-muted`
+
+### 6.5 Typography Rules
+
+- Prefer fewer font weights with clearer hierarchy
+- Large titles should use tighter tracking
+- Keep paragraph width controlled
+- Do not rely on color alone to create hierarchy
+
+---
+
+## 7. Layout Language
+
+### 7.1 Global Layout
+
+The layout should feel spacious and editorial.
+
+Rules:
+- Use wider content breathing room
+- Group content into clear zones
+- Avoid stacking too many unrelated cards tightly together
+
+Recommended content widths:
+- Standard content max width: `1200px - 1280px`
+- Hero content max width: `1280px - 1360px`
+- Reading content width: `720px - 840px`
+
+### 7.2 Spacing Rhythm
+
+Use an 8px-based rhythm.
+
+Recommended major spacing:
+- Section gap: `64px - 96px`
+- Card padding: `20px - 32px`
+- Component gap: `12px - 20px`
+- Tight inline gap: `6px - 10px`
+
+### 7.3 Corner Radius
+
+- Small elements: `10px - 12px`
+- Inputs and buttons: `14px - 18px`
+- Cards: `20px - 24px`
+- Hero panels: `28px - 32px`
+
+---
+
+## 8. Component Language
+
+### 8.1 Buttons
+
+Primary button:
+- Solid teal background
+- White text
+- Medium or semibold weight
+- Slight lift on hover
+
+Secondary button:
+- Translucent white or pale surface
+- Thin border
+- Text in primary teal
+
+Ghost button:
+- No hard fill
+- Quiet neutral text
+- Used for tertiary actions only
+
+Button rules:
+- Primary CTA should be unique in a local area
+- Avoid having multiple equally bright buttons adjacent to each other
+- Use shape and spacing to support hierarchy
+
+### 8.2 Inputs
+
+Input style:
+- Soft surface background
+- Thin border
+- Strong focus ring in teal
+- Comfortable inner padding
+
+Prompt input should feel like a creative command surface, not a plain form field.
+
+### 8.3 Chips and Tags
+
+Use chips for:
+- Example prompts
+- App type
+- Status
+- Filters
+
+Style:
+- Soft surface background
+- Rounded full shape or rounded pill
+- Quiet border
+- Active chip can use pale teal fill
+
+### 8.4 Cards
+
+App cards should emphasize:
+- Cover or preview
+- Title
+- One-line summary
+- Status
+- Updated time
+
+Cards should not feel like admin records.
+They should feel like project tiles or creative works.
+
+### 8.5 Navigation
+
+Header should be:
+- Light
+- Sticky
+- Clean
+- Not visually heavier than page content
+
+Navigation items:
+- Use subtle hover states
+- Strong active state, but not loud
+- Primary creation action may sit on the right
+
+---
+
+## 9. Motion Language
+
+### 9.1 Motion Personality
+
+Motion should feel:
+- Soft
+- Intentional
+- Helpful
+- Calm
+
+Not:
+- Bouncy everywhere
+- Hyperactive
+- Decorative without meaning
+
+### 9.2 Recommended Motion
+
+- Hover lift: `translateY(-2px)` to `translateY(-4px)`
+- Fade and rise on section reveal
+- Smooth state transitions on hover/focus
+- Gentle loading shimmer or pulse in workspace areas
+
+### 9.3 Duration
+
+- Quick hover: `150ms - 180ms`
+- Standard transition: `220ms - 280ms`
+- Page section reveal: `320ms - 420ms`
+
+### 9.4 Prohibited Motion
+
+- Infinite floating on too many elements
+- Repetitive scaling animations on multiple CTAs
+- Flashing gradients
+- Heavy parallax for product surfaces
+
+---
+
+## 10. Page-Specific Design Rules
+
+### 10.1 Home Page
+
+The home page should contain four clear zones:
+
+1. Hero
+2. Prompt creation workbench
+3. Featured showcase
+4. Capability/trust strip
+
+Hero requirements:
+- One strong product promise
+- One short supporting line
+- One dominant prompt action
+- One visual preview area or concept panel
+
+Prompt area requirements:
+- Large prompt field
+- Example prompt chips
+- Clear generation type selection
+- One strong create action
+
+Featured showcase requirements:
+- More visual than textual
+- Should feel like a curated gallery, not plain repeated cards
+
+### 10.2 App List Page
+
+The app list page should feel like a creator dashboard:
+- Search and filter first
+- Clear status system
+- Continue creation should be the main action
+- Preview and manage are secondary
+
+### 10.3 App Detail Page
+
+The detail page should feel like a project presentation page:
+- Preview is first-class
+- Metadata is supportive
+- Actions are grouped by next step
+- Avoid backend-style descriptions as the only layout
+
+### 10.4 Chat Workspace Page
+
+The chat page is the core product experience and should be treated as a studio workspace.
+
+Must include clear hierarchy for:
+- App identity
+- Current stage
+- Conversation
+- Live preview
+- Deployment readiness
+
+On mobile:
+- Use tabbed switching between conversation and preview
+- Avoid cramped split-view layouts
+
+---
+
+## 11. Status System
+
+Use consistent status labels across pages:
+
+- `Draft`
+- `Generating`
+- `Ready to Preview`
+- `Ready to Deploy`
+- `Deployed`
+- `Error`
+
+Status rules:
+- Status should appear as calm pills, not alarming badges
+- Use color as support, not as the only differentiator
+- Each status should map to a recommended next action
+
+Recommended mapping:
+- Draft -> Continue creation
+- Generating -> Wait / View progress
+- Ready to Preview -> Preview
+- Ready to Deploy -> Deploy
+- Deployed -> Open live site
+- Error -> Fix and retry
+
+---
+
+## 12. Iconography and Imagery
+
+### 12.1 Icons
+
+Use consistent line icons as the primary icon style.
+
+Rules:
+- Stroke-based icons preferred
+- Avoid mixing emoji, filled icons, and outline icons randomly
+- Important product actions should use the same icon family
+
+### 12.2 Images and Covers
+
+App previews should be treated as product assets.
+
+Rules:
+- Prefer real preview thumbnails over generic placeholder icons
+- If no preview is available, use a branded abstract cover
+- Placeholder visuals should still feel premium and consistent
+
+---
+
+## 13. Accessibility and Usability
+
+### 13.1 Readability
+
+- Body text must maintain strong contrast
+- Muted text should still remain readable
+- Avoid tiny low-contrast captions
+
+### 13.2 Interaction
+
+- All interactive areas need clear hover and focus feedback
+- Buttons and tags must have comfortable touch targets
+- Major flows should be understandable without needing prior training
+
+### 13.3 Consistency
+
+- Similar actions should look similar across pages
+- Similar content types should use the same card structure
+- Page-level behavior should not change without strong reason
+
+---
+
+## 14. Implementation Guidance
+
+This document should drive future updates to:
+
+- `src/styles/variables.css`
+- shared button, card, tag, and layout styles
+- home page redesign
+- app list redesign
+- app detail redesign
+- chat workspace redesign
+
+Implementation strategy:
+
+1. Update design tokens first
+2. Unify global surface, button, and card styles
+3. Redesign home page
+4. Redesign chat workspace
+5. Redesign app list and detail pages
+
+---
+
+## 15. Quick Checklist
+
+Before shipping a new page or component, confirm:
+
+- Does it look like part of `Creator Studio`?
+- Is the next action obvious?
+- Is the page calm rather than noisy?
+- Are surfaces, spacing, and buttons consistent with the theme?
+- Does the page feel like a creative product, not a generic admin screen?
+- Is preview or output emphasized where it matters?
+
+If the answer to any of the above is no, the design is not aligned yet.

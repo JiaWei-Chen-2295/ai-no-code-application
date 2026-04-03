@@ -997,18 +997,19 @@ const renderVueProjectContent = (content: string) => {
     height: 100vh;
     display: flex;
     flex-direction: column;
-    background: var(--gray-50);
+    background: var(--color-bg);
 }
 
-/* 顶部栏 */
+/* 顶部栏 - Creator Studio 风格 */
 .chat-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: var(--spacing-4) var(--spacing-6);
-    background: white;
-    border-bottom: 2px solid var(--secondary-200);
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-line);
     box-shadow: var(--shadow-sm);
+    backdrop-filter: blur(14px);
 }
 
 .header-left {

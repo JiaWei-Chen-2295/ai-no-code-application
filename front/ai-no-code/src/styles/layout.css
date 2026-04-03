@@ -1,22 +1,23 @@
-/* 布局样式 */
+/* 布局样式 - Creator Studio */
 
 /* 主要布局容器 */
 .app-layout {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: var(--gray-50);
+  background-color: var(--color-bg);
 }
 
-/* 头部导航 */
+/* 头部导航 - 轻盈简约 */
 .header {
-  background-color: white;
-  border-bottom: 1px solid var(--gray-200);
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-line);
   box-shadow: var(--shadow-sm);
   position: sticky;
   top: 0;
   z-index: var(--z-sticky);
   transition: var(--transition-all);
+  backdrop-filter: blur(14px);
 }
 
 .header-container {
@@ -34,7 +35,7 @@
   gap: var(--spacing-3);
   font-size: var(--text-xl);
   font-weight: var(--font-bold);
-  color: var(--gray-900);
+  color: var(--color-text);
   text-decoration: none;
 }
 
@@ -51,7 +52,7 @@
 }
 
 .header-nav-item {
-  color: var(--gray-600);
+  color: var(--color-text-soft);
   text-decoration: none;
   font-weight: var(--font-medium);
   padding: var(--spacing-2) var(--spacing-3);
@@ -61,7 +62,7 @@
 
 .header-nav-item:hover,
 .header-nav-item.active {
-  color: var(--primary-600);
+  color: var(--primary-500);
   background-color: var(--primary-50);
 }
 
@@ -74,8 +75,8 @@
 /* 侧边栏 */
 .sidebar {
   width: 280px;
-  background-color: white;
-  border-right: 1px solid var(--gray-200);
+  background-color: var(--color-surface-solid);
+  border-right: 1px solid var(--color-line);
   height: calc(100vh - 73px);
   position: sticky;
   top: 73px;
@@ -85,13 +86,13 @@
 
 .sidebar-header {
   padding: var(--spacing-6);
-  border-bottom: 1px solid var(--gray-200);
+  border-bottom: 1px solid var(--color-line);
 }
 
 .sidebar-title {
   font-size: var(--text-lg);
   font-weight: var(--font-semibold);
-  color: var(--gray-900);
+  color: var(--color-text);
   margin: 0;
 }
 
@@ -118,7 +119,7 @@
   align-items: center;
   gap: var(--spacing-3);
   padding: var(--spacing-3);
-  color: var(--gray-700);
+  color: var(--color-text-soft);
   text-decoration: none;
   border-radius: var(--radius-lg);
   transition: var(--transition-colors);
@@ -127,12 +128,12 @@
 
 .sidebar-nav-item:hover {
   background-color: var(--gray-100);
-  color: var(--gray-900);
+  color: var(--color-text);
 }
 
 .sidebar-nav-item.active {
-  background-color: var(--primary-100);
-  color: var(--primary-700);
+  background-color: var(--primary-50);
+  color: var(--primary-600);
 }
 
 .sidebar-nav-item-icon {
@@ -161,12 +162,12 @@
 .content-title {
   font-size: var(--text-3xl);
   font-weight: var(--font-bold);
-  color: var(--gray-900);
+  color: var(--color-text);
   margin-bottom: var(--spacing-2);
 }
 
 .content-subtitle {
-  color: var(--gray-600);
+  color: var(--color-text-soft);
   font-size: var(--text-lg);
 }
 
@@ -179,8 +180,8 @@
 
 /* 页脚 */
 .footer {
-  background-color: white;
-  border-top: 1px solid var(--gray-200);
+  background-color: var(--color-surface-solid);
+  border-top: 1px solid var(--color-line);
   padding: var(--spacing-8) 0;
   margin-top: auto;
 }

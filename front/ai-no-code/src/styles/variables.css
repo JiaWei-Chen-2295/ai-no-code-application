@@ -1,104 +1,103 @@
-/* 设计系统变量 - 基于主题规范 */
+/* 设计系统变量 - Creator Studio 主题 */
 :root {
-  /* 主色调 - 翡翠绿（降低饱和度）*/
-  --primary-50: #f3f9f6;
-  --primary-100: #e3f2eb;
-  --primary-200: #c7e5d6;
-  --primary-300: #9dd3b8;
-  --primary-400: #6bb892;
-  --primary-500: #4a9d75;
-  --primary-600: #3a8060;
-  --primary-700: #2f674d;
-  --primary-800: #28533f;
-  --primary-900: #1f3e30;
-  
-  /* 次要色调 - 深青蓝（降低饱和度）*/
-  --secondary-50: #f2f8f8;
-  --secondary-100: #d9edec;
-  --secondary-200: #b3dbd8;
-  --secondary-300: #84c3be;
-  --secondary-400: #5ca6a0;
-  --secondary-500: #478981;
-  --secondary-600: #3a6f69;
-  --secondary-700: #2f5a55;
-  --secondary-800: #274845;
-  --secondary-900: #1e3633;
-  
-  /* 强调色 - 柔和黄（降低饱和度）*/
-  --accent-50: #fdfbf2;
-  --accent-100: #faf4d9;
-  --accent-200: #f5e9b3;
-  --accent-300: #edd884;
-  --accent-400: #e3c555;
-  --accent-500: #d4af37;
-  --accent-600: #b8952c;
-  --accent-700: #987926;
-  --accent-800: #7a6021;
-  --accent-900: #5c4819;
+  /* 主色调 - 深青色 (Teal) */
+  --primary-50: #e9f5f3;
+  --primary-100: #d3ebe7;
+  --primary-200: #a6d7cf;
+  --primary-300: #79c3b7;
+  --primary-400: #45a99d;
+  --primary-500: #0f766e;
+  --primary-600: #0c625c;
+  --primary-700: #0b4f4a;
+  --primary-800: #083c38;
+  --primary-900: #052927;
 
-  /* 深蓝绿色调（降低饱和度）*/
-  --deep-50: #f2f7f9;
-  --deep-100: #deeaf0;
-  --deep-200: #bdd5e1;
-  --deep-300: #95bace;
-  --deep-400: #6d9db5;
-  --deep-500: #507e96;
-  --deep-600: #42667b;
-  --deep-700: #355263;
-  --deep-800: #2b424f;
-  --deep-900: #21323c;
+  /* 强调色 - 暖杏金 (Apricot) */
+  --accent-50: #fdf5eb;
+  --accent-100: #fbe8c9;
+  --accent-200: #f8d59f;
+  --accent-300: #f4b860;
+  --accent-400: #e7a64a;
+  --accent-500: #d28e35;
+  --accent-600: #b57a2d;
+  --accent-700: #966525;
+  --accent-800: #77501d;
+  --accent-900: #583b15;
 
-  /* 成功色（降低饱和度）*/
-  --success-50: #f3f9f5;
-  --success-100: #e4f2e8;
-  --success-200: #c8e5d1;
-  --success-300: #a0d1ae;
-  --success-400: #74b885;
-  --success-500: #529e68;
-  --success-600: #428053;
-  --success-700: #356643;
-  --success-800: #2b5136;
-  --success-900: #21392a;
+  /* 中性色 - 暖灰基调 */
+  --gray-50: #fbfbf9;
+  --gray-100: #f6f7f4;
+  --gray-200: #edeee9;
+  --gray-300: #dddeda;
+  --gray-400: #8a949b;
+  --gray-500: #5f6b73;
+  --gray-600: #3c464d;
+  --gray-700: #2a3238;
+  --gray-800: #1e252a;
+  --gray-900: #132026;
 
-  /* 警告色（降低饱和度）*/
-  --warning-50: #fdfaf3;
-  --warning-100: #faf2de;
-  --warning-200: #f5e4bd;
-  --warning-300: #edd092;
-  --warning-400: #e3b96b;
-  --warning-500: #d4a04a;
-  --warning-600: #b8843d;
-  --warning-700: #986b32;
-  --warning-800: #7a5529;
-  --warning-900: #5c4020;
+  /* 语义别名 - 表面与边框 */
+  --color-bg: #f6f7f4;
+  --color-bg-elevated: #fbfbf9;
+  --color-surface: rgba(255, 255, 255, 0.78);
+  --color-surface-solid: #ffffff;
+  --color-line: rgba(19, 32, 38, 0.08);
+  --color-line-strong: rgba(19, 32, 38, 0.14);
+  --color-text: #132026;
+  --color-text-soft: #5f6b73;
+  --color-text-muted: #8a949b;
 
-  /* 错误色（降低饱和度）*/
-  --error-50: #faf3f3;
-  --error-100: #f5e4e4;
-  --error-200: #eac9c9;
-  --error-300: #daa3a3;
-  --error-400: #c67777;
-  --error-500: #b05555;
-  --error-600: #944545;
-  --error-700: #773838;
-  --error-800: #5f2d2d;
-  --error-900: #472323;
+  /* 成功色 */
+  --success-50: #eef7f2;
+  --success-100: #d5ebde;
+  --success-200: #b3d9c3;
+  --success-300: #86c2a0;
+  --success-400: #5daa7f;
+  --success-500: #3f8f72;
+  --success-600: #33755d;
+  --success-700: #2a5f4c;
+  --success-800: #21493b;
+  --success-900: #18352b;
 
-  /* 中性色 - 基于深灰蓝 */
-  --gray-50: #f8f9fa;
-  --gray-100: #f1f3f4;
-  --gray-200: #e8eaed;
-  --gray-300: #dadce0;
-  --gray-400: #9aa0a6;
-  --gray-500: #5f6368;
-  --gray-600: #3c4043;
-  --gray-700: #2f4858;
-  --gray-800: #2f4858;
-  --gray-900: #202124;
+  /* 警告色 */
+  --warning-50: #fdf8ee;
+  --warning-100: #f9ecd3;
+  --warning-200: #f3dbb0;
+  --warning-300: #eac586;
+  --warning-400: #dfac5a;
+  --warning-500: #d79a3c;
+  --warning-600: #b88232;
+  --warning-700: #966a29;
+  --warning-800: #755320;
+  --warning-900: #553d18;
+
+  /* 错误色 */
+  --error-50: #faf1f1;
+  --error-100: #f2dddd;
+  --error-200: #e5baba;
+  --error-300: #d4908f;
+  --error-400: #c77372;
+  --error-500: #b85c5c;
+  --error-600: #9c4d4d;
+  --error-700: #7e3e3e;
+  --error-800: #603030;
+  --error-900: #442323;
+
+  /* 信息色 */
+  --info-50: #eff6fa;
+  --info-100: #d5e8f2;
+  --info-200: #b1d4e6;
+  --info-300: #84bad5;
+  --info-400: #5da0c2;
+  --info-500: #4c89a8;
+  --info-600: #3f728c;
+  --info-700: #335b71;
+  --info-800: #284657;
+  --info-900: #1d323f;
 
   /* 字体系统 */
-  --font-family-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-family-mono: 'JetBrains Mono', 'Fira Code', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+  --font-family-sans: 'HarmonyOS Sans SC', 'Alibaba PuHuiTi 3.0', 'PingFang SC', 'Noto Sans SC', 'Segoe UI', sans-serif;
+  --font-family-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
 
   /* 字体大小 */
   --text-xs: 0.75rem;     /* 12px */
@@ -146,31 +145,31 @@
   --spacing-24: 6rem;     /* 96px */
   --spacing-32: 8rem;     /* 128px */
 
-  /* 圆角 */
+  /* 圆角 - Creator Studio 柔和圆角 */
   --radius-none: 0;
-  --radius-sm: 0.125rem;  /* 2px */
-  --radius-base: 0.25rem; /* 4px */
-  --radius-md: 0.375rem;  /* 6px */
-  --radius-lg: 0.5rem;    /* 8px */
-  --radius-xl: 0.75rem;   /* 12px */
-  --radius-2xl: 1rem;     /* 16px */
-  --radius-3xl: 1.5rem;   /* 24px */
+  --radius-sm: 0.375rem;  /* 6px */
+  --radius-base: 0.5rem;  /* 8px */
+  --radius-md: 0.625rem;  /* 10px */
+  --radius-lg: 0.875rem;  /* 14px */
+  --radius-xl: 1.25rem;   /* 20px */
+  --radius-2xl: 1.5rem;   /* 24px */
+  --radius-3xl: 1.75rem;  /* 28px */
   --radius-full: 9999px;
 
-  /* 阴影 */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-base: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
-  --shadow-inner: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
+  /* 阴影 - 柔和模糊 */
+  --shadow-sm: 0 1px 3px rgba(19, 32, 38, 0.04);
+  --shadow-base: 0 2px 8px rgba(19, 32, 38, 0.04), 0 1px 2px rgba(19, 32, 38, 0.03);
+  --shadow-md: 0 4px 12px rgba(19, 32, 38, 0.06), 0 2px 4px rgba(19, 32, 38, 0.04);
+  --shadow-lg: 0 10px 30px rgba(19, 32, 38, 0.06), 0 2px 8px rgba(19, 32, 38, 0.04);
+  --shadow-xl: 0 16px 40px rgba(19, 32, 38, 0.08), 0 4px 12px rgba(19, 32, 38, 0.04);
+  --shadow-2xl: 0 24px 50px rgba(19, 32, 38, 0.12);
+  --shadow-inner: inset 0 2px 4px 0 rgba(19, 32, 38, 0.04);
 
-  /* 过渡动画 */
-  --transition-all: all 0.15s ease-in-out;
-  --transition-colors: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
-  --transition-opacity: opacity 0.15s ease-in-out;
-  --transition-transform: transform 0.15s ease-in-out;
+  /* 过渡动画 - Creator Studio 柔和节奏 */
+  --transition-all: all 0.22s ease-in-out;
+  --transition-colors: color 0.22s ease-in-out, background-color 0.22s ease-in-out, border-color 0.22s ease-in-out;
+  --transition-opacity: opacity 0.22s ease-in-out;
+  --transition-transform: transform 0.22s ease-in-out;
 
   /* Z-index层级 */
   --z-dropdown: 1000;
@@ -192,25 +191,25 @@
 
 /* 暗色主题 */
 [data-theme="dark"] {
-  --primary-50: #0c4a6e;
-  --primary-100: #075985;
-  --primary-200: #0369a1;
-  --primary-300: #0284c7;
-  --primary-400: #0ea5e9;
-  --primary-500: #38bdf8;
-  --primary-600: #7dd3fc;
-  --primary-700: #bae6fd;
-  --primary-800: #e0f2fe;
-  --primary-900: #f0f9ff;
+  --primary-50: #052927;
+  --primary-100: #083c38;
+  --primary-200: #0b4f4a;
+  --primary-300: #0c625c;
+  --primary-400: #0f766e;
+  --primary-500: #45a99d;
+  --primary-600: #79c3b7;
+  --primary-700: #a6d7cf;
+  --primary-800: #d3ebe7;
+  --primary-900: #e9f5f3;
 
-  --gray-50: #18181b;
-  --gray-100: #27272a;
-  --gray-200: #3f3f46;
-  --gray-300: #52525b;
-  --gray-400: #71717a;
-  --gray-500: #a1a1aa;
-  --gray-600: #d4d4d8;
-  --gray-700: #e4e4e7;
-  --gray-800: #f4f4f5;
-  --gray-900: #fafafa;
+  --gray-50: #132026;
+  --gray-100: #1e252a;
+  --gray-200: #2a3238;
+  --gray-300: #3c464d;
+  --gray-400: #5f6b73;
+  --gray-500: #8a949b;
+  --gray-600: #b0b8be;
+  --gray-700: #d0d5d8;
+  --gray-800: #edeee9;
+  --gray-900: #fbfbf9;
 }

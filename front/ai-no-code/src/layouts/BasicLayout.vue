@@ -134,15 +134,16 @@ onMounted(() => {
   min-height: 100vh;
 }
 
-/* 简约风格导航栏 */
+/* Creator Studio 简约导航栏 */
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 var(--spacing-8);
-  background: white;
-  box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.05);
-  border-bottom: 1px solid var(--gray-200);
+  background: var(--color-surface);
+  backdrop-filter: blur(14px);
+  box-shadow: var(--shadow-sm);
+  border-bottom: 1px solid var(--color-line);
   height: 64px;
 }
 
@@ -157,7 +158,7 @@ onMounted(() => {
 
 .logo-icon {
   font-size: 28px;
-  color: var(--primary-600);
+  color: var(--primary-500);
   transition: var(--transition-transform);
 }
 
@@ -166,7 +167,7 @@ onMounted(() => {
 }
 
 .logo h2 {
-  color: var(--gray-900);
+  color: var(--color-text);
   margin: 0;
   font-weight: var(--font-bold);
   font-size: var(--text-2xl);
@@ -175,7 +176,7 @@ onMounted(() => {
 }
 
 .logo:hover h2 {
-  color: var(--primary-600);
+  color: var(--primary-500);
 }
 
 /* 导航菜单 */
@@ -184,7 +185,7 @@ onMounted(() => {
   margin-left: var(--spacing-12);
 }
 
-/* 覆盖ant-design菜单样式 - 简约风格 */
+/* 覆盖ant-design菜单样式 - Creator Studio 风格 */
 .nav :deep(.ant-menu) {
   background: transparent !important;
   border-bottom: none !important;
@@ -192,7 +193,7 @@ onMounted(() => {
 }
 
 .nav :deep(.ant-menu-item) {
-  color: var(--gray-700) !important;
+  color: var(--color-text-soft) !important;
   border-radius: 0 !important;
   margin: 0 var(--spacing-4);
   padding: 0 var(--spacing-2);
@@ -247,11 +248,11 @@ onMounted(() => {
 
 /* 用户信息 - 简约设计 */
 .user-info {
-  color: var(--gray-700);
+  color: var(--color-text-soft);
 }
 
 .user-avatar {
-  color: var(--gray-700);
+  color: var(--color-text-soft);
   text-decoration: none;
   padding: var(--spacing-2) var(--spacing-4);
   border-radius: var(--radius-lg);
@@ -264,9 +265,9 @@ onMounted(() => {
 }
 
 .user-avatar:hover {
-  background-color: var(--gray-50);
-  color: var(--primary-600);
-  border-color: var(--gray-200);
+  background-color: var(--primary-50);
+  color: var(--primary-500);
+  border-color: var(--color-line);
 }
 
 .user-icon {
@@ -317,21 +318,21 @@ onMounted(() => {
 
 .content {
   padding: var(--spacing-6);
-  background: linear-gradient(135deg, var(--gray-50) 0%, #f5f7fa 100%);
+  background: var(--color-bg);
   min-height: calc(100vh - 64px - 70px);
 }
 
-/* 页脚 - 简约风格 */
+/* 页脚 - Creator Studio */
 .footer {
   text-align: center;
-  background: white;
-  color: var(--gray-600);
+  background: var(--color-surface-solid);
+  color: var(--color-text-soft);
   padding: var(--spacing-6);
-  border-top: 1px solid var(--gray-200);
+  border-top: 1px solid var(--color-line);
 }
 
 .footer-content {
-  color: var(--gray-500);
+  color: var(--color-text-muted);
   font-size: var(--text-sm);
   font-weight: var(--font-normal);
 }

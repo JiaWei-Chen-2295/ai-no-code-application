@@ -109,32 +109,23 @@ const formatTime = (time?: string) => {
 </script>
 
 <style scoped>
+/* AppCard - Creator Studio 项目瓷砖风格 */
 .app-card {
     height: 100%;
-    border: 2px solid var(--secondary-200);
+    border: 1px solid var(--color-line);
     border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-md);
-    background: white;
+    box-shadow: var(--shadow-sm);
+    background: var(--color-surface);
     transition: var(--transition-all);
     overflow: hidden;
     position: relative;
-}
-
-.app-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, var(--primary-600), var(--accent-500), var(--secondary-600));
-    z-index: 1;
+    backdrop-filter: blur(14px);
 }
 
 .app-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-xl);
-    border-color: var(--primary-300);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--color-line-strong);
 }
 
 /* 卡片封面 */
@@ -152,7 +143,7 @@ const formatTime = (time?: string) => {
 
 .default-cover {
     height: 100%;
-    background: linear-gradient(135deg, var(--primary-600) 0%, var(--secondary-600) 100%);
+    background: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-700) 100%);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -168,7 +159,7 @@ const formatTime = (time?: string) => {
     left: 0;
     right: 0;
     bottom: 0;
-    background: radial-gradient(circle at 30% 30%, rgba(255, 220, 0, 0.2), transparent 50%);
+    background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.12), transparent 60%);
 }
 
 .app-icon {
@@ -176,16 +167,16 @@ const formatTime = (time?: string) => {
     color: white;
     z-index: 1;
     position: relative;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
     margin-bottom: var(--spacing-2);
     opacity: 0.95;
 }
 
 .app-type-badge {
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.92);
     color: var(--primary-600);
     padding: var(--spacing-1) var(--spacing-3);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-full);
     font-size: var(--text-xs);
     font-weight: var(--font-semibold);
     z-index: 1;
@@ -202,11 +193,11 @@ const formatTime = (time?: string) => {
 
 /* 卡片内容 */
 .app-card :deep(.ant-card-body) {
-    padding: var(--spacing-4);
+    padding: var(--spacing-5);
 }
 
 .app-card :deep(.ant-card-meta-title) {
-    color: var(--deep-600) !important;
+    color: var(--color-text) !important;
     font-size: var(--text-lg) !important;
     font-weight: var(--font-semibold) !important;
     margin-bottom: var(--spacing-2) !important;
@@ -214,7 +205,7 @@ const formatTime = (time?: string) => {
 }
 
 .app-card :deep(.ant-card-meta-description) {
-    color: var(--gray-600) !important;
+    color: var(--color-text-soft) !important;
     font-size: var(--text-sm) !important;
     line-height: var(--leading-relaxed) !important;
     margin-bottom: var(--spacing-3) !important;
@@ -235,29 +226,30 @@ const formatTime = (time?: string) => {
 }
 
 .app-type {
-    background: var(--secondary-100);
-    color: var(--secondary-700);
+    background: var(--primary-50);
+    color: var(--primary-600);
     padding: 2px var(--spacing-2);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-full);
     font-size: var(--text-xs);
     font-weight: var(--font-medium);
 }
 
 .app-author {
     font-size: var(--text-xs);
-    color: var(--gray-500);
+    color: var(--color-text-muted);
     font-weight: var(--font-medium);
 }
 
 .app-time {
     font-size: var(--text-xs);
-    color: var(--gray-500);
+    color: var(--color-text-muted);
 }
 
+/* 状态标签 - 安静的 pill */
 .app-status {
     font-size: var(--text-xs);
-    padding: 3px var(--spacing-2);
-    border-radius: var(--radius-md);
+    padding: 3px var(--spacing-3);
+    border-radius: var(--radius-full);
     font-weight: var(--font-medium);
     text-align: center;
     min-width: 60px;
@@ -271,32 +263,32 @@ const formatTime = (time?: string) => {
 }
 
 .app-status.deployed {
-    background: var(--success-100);
-    color: var(--success-700);
+    background: var(--success-50);
+    color: var(--success-600);
 }
 
 .app-status.draft {
-    background: var(--warning-100);
-    color: var(--warning-700);
+    background: var(--warning-50);
+    color: var(--warning-600);
 }
 
 /* 操作按钮 */
 .app-card :deep(.ant-card-actions) {
-    background: var(--gray-50) !important;
-    border-top: 1px solid var(--secondary-200) !important;
+    background: var(--color-bg-elevated) !important;
+    border-top: 1px solid var(--color-line) !important;
     padding: var(--spacing-2) 0 !important;
 }
 
 .action-icon {
-    color: var(--gray-600);
+    color: var(--color-text-muted);
     font-size: 20px;
     transition: var(--transition-all);
     cursor: pointer;
 }
 
 .action-icon:hover {
-    color: var(--primary-600);
-    transform: scale(1.15);
+    color: var(--primary-500);
+    transform: scale(1.1);
 }
 
 .delete-icon:hover {

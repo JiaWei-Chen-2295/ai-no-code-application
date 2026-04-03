@@ -1,4 +1,4 @@
-/* 组件样式库 */
+/* 组件样式库 - Creator Studio */
 
 /* 按钮组件 */
 .btn {
@@ -55,15 +55,15 @@
 
 /* 按钮变体 */
 .btn-primary {
-  background-color: var(--primary-600);
+  background-color: var(--primary-500);
   color: white;
-  border-color: var(--primary-600);
+  border-color: var(--primary-500);
 }
 
 .btn-primary:hover {
-  background-color: var(--primary-700);
-  border-color: var(--primary-700);
-  transform: translateY(-1px);
+  background-color: var(--primary-600);
+  border-color: var(--primary-600);
+  transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
 }
 
@@ -73,40 +73,40 @@
 }
 
 .btn-secondary {
-  background-color: var(--gray-100);
-  color: var(--gray-900);
-  border-color: var(--gray-300);
+  background-color: var(--color-surface);
+  color: var(--primary-500);
+  border-color: var(--color-line-strong);
 }
 
 .btn-secondary:hover {
-  background-color: var(--gray-200);
-  border-color: var(--gray-400);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-lg);
+  background-color: var(--primary-50);
+  border-color: var(--primary-300);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .btn-outline {
   background-color: transparent;
-  color: var(--primary-600);
-  border-color: var(--primary-600);
+  color: var(--primary-500);
+  border-color: var(--primary-500);
 }
 
 .btn-outline:hover {
-  background-color: var(--primary-600);
+  background-color: var(--primary-500);
   color: white;
-  transform: translateY(-1px);
+  transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
 }
 
 .btn-ghost {
   background-color: transparent;
-  color: var(--gray-700);
+  color: var(--color-text-soft);
   border-color: transparent;
 }
 
 .btn-ghost:hover {
   background-color: var(--gray-100);
-  color: var(--gray-900);
+  color: var(--color-text);
 }
 
 .btn-success {
@@ -148,25 +148,27 @@
   box-shadow: var(--shadow-lg);
 }
 
-/* 卡片组件 */
+/* 卡片组件 - 磨砂玻璃风格 */
 .card {
-  background-color: white;
-  border: 1px solid var(--gray-200);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-line);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
   transition: var(--transition-all);
+  backdrop-filter: blur(14px);
 }
 
 .card:hover {
   box-shadow: var(--shadow-lg);
   transform: translateY(-2px);
+  border-color: var(--color-line-strong);
 }
 
 .card-header {
   padding: var(--spacing-6);
-  border-bottom: 1px solid var(--gray-200);
-  background-color: var(--gray-50);
+  border-bottom: 1px solid var(--color-line);
+  background-color: var(--color-bg-elevated);
 }
 
 .card-body {
@@ -175,8 +177,8 @@
 
 .card-footer {
   padding: var(--spacing-6);
-  border-top: 1px solid var(--gray-200);
-  background-color: var(--gray-50);
+  border-top: 1px solid var(--color-line);
+  background-color: var(--color-bg-elevated);
 }
 
 /* 输入框组件 */
@@ -185,17 +187,17 @@
   padding: var(--spacing-3) var(--spacing-4);
   font-size: var(--text-base);
   line-height: var(--leading-normal);
-  color: var(--gray-900);
-  background-color: white;
-  border: 1px solid var(--gray-300);
+  color: var(--color-text);
+  background-color: var(--color-bg-elevated);
+  border: 1px solid var(--color-line-strong);
   border-radius: var(--radius-lg);
   transition: var(--transition-all);
 }
 
 .input:focus {
   outline: none;
-  border-color: var(--primary-500);
-  box-shadow: 0 0 0 3px var(--primary-100);
+  border-color: var(--primary-400);
+  box-shadow: 0 0 0 3px var(--primary-50);
 }
 
 .input:disabled {

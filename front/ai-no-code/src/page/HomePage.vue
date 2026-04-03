@@ -271,16 +271,16 @@ onMounted(() => {
 
 <style scoped>
 #homePage {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
-  padding: 0 var(--spacing-4);
+  padding: 0 var(--spacing-6);
 }
 
-/* 主标题区域 */
+/* 主标题区域 - Creator Studio Hero */
 .hero-section {
   text-align: center;
   padding: var(--spacing-16) 0 var(--spacing-8);
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%);
+  background: linear-gradient(180deg, var(--color-bg) 0%, var(--color-bg-elevated) 100%);
   border-radius: var(--radius-3xl);
   margin-bottom: var(--spacing-12);
   position: relative;
@@ -290,11 +290,14 @@ onMounted(() => {
 .hero-section::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: radial-gradient(circle at 30% 30%, rgba(255, 220, 0, 0.1), transparent 50%);
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 400px;
+  background: radial-gradient(circle, var(--primary-100) 0%, transparent 70%);
+  pointer-events: none;
+  opacity: 0.5;
 }
 
 .hero-content {
@@ -306,16 +309,14 @@ onMounted(() => {
   font-size: var(--text-6xl);
   font-weight: var(--font-bold);
   margin-bottom: var(--spacing-4);
-  background: linear-gradient(135deg, var(--primary-600), var(--secondary-600));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--color-text);
+  letter-spacing: -1px;
 }
 
 .ai-icon {
   font-size: var(--text-5xl);
   margin: 0 var(--spacing-2);
-  color: var(--primary-600);
+  color: var(--primary-500);
   display: inline-block;
   animation: float 3s ease-in-out infinite;
 }
@@ -325,52 +326,43 @@ onMounted(() => {
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-8px);
+    transform: translateY(-6px);
   }
 }
 
 .subtitle {
   font-size: var(--text-xl);
-  color: var(--gray-700);
+  color: var(--color-text-soft);
   margin: 0;
 }
 
-/* 输入区域 */
+/* 输入区域 - Creator Studio Workbench */
 .input-section {
   margin-bottom: var(--spacing-12);
 }
 
 .input-container {
-  background: white;
-  border-radius: var(--radius-2xl);
-  padding: var(--spacing-6);
-  box-shadow: var(--shadow-xl);
-  border: 2px solid var(--secondary-200);
+  background: var(--color-surface);
+  border-radius: var(--radius-3xl);
+  padding: var(--spacing-8);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--color-line);
+  backdrop-filter: blur(14px);
   position: relative;
-  overflow: hidden;
-}
-
-.input-container::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, var(--primary-600), var(--accent-500), var(--secondary-600));
 }
 
 .input-container :deep(.ant-input) {
-  border: 2px solid var(--secondary-200);
+  border: 1px solid var(--color-line-strong);
   border-radius: var(--radius-lg);
   font-size: var(--text-base);
   line-height: var(--leading-relaxed);
   transition: var(--transition-all);
+  background: var(--color-bg-elevated);
 }
 
 .input-container :deep(.ant-input:focus) {
-  border-color: var(--primary-500);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--primary-400);
+  box-shadow: 0 0 0 3px var(--primary-50);
 }
 
 .input-actions {
@@ -390,20 +382,22 @@ onMounted(() => {
 
 .upload-btn,
 .optimize-btn {
-  border: 2px solid var(--secondary-300);
-  color: var(--secondary-600);
+  border: 1px solid var(--color-line-strong);
+  color: var(--color-text-soft);
   border-radius: var(--radius-lg);
   font-weight: var(--font-medium);
   transition: var(--transition-all);
   display: flex;
   align-items: center;
   gap: var(--spacing-2);
+  background: var(--color-bg-elevated);
 }
 
 .upload-btn:hover,
 .optimize-btn:hover {
-  border-color: var(--secondary-600);
-  color: var(--secondary-700);
+  border-color: var(--primary-300);
+  color: var(--primary-600);
+  background: var(--primary-50);
   transform: translateY(-1px);
 }
 
@@ -411,44 +405,33 @@ onMounted(() => {
   font-size: 18px;
 }
 
-/* 类型选择器样式 */
+/* 类型选择器 */
 .type-selector {
   min-width: 160px !important;
   border-radius: var(--radius-lg) !important;
 }
 
 .type-selector :deep(.ant-select-selector) {
-  border: 2px solid var(--secondary-300) !important;
+  border: 1px solid var(--color-line-strong) !important;
   border-radius: var(--radius-lg) !important;
   font-weight: var(--font-medium) !important;
   transition: var(--transition-all) !important;
   height: 40px !important;
   display: flex !important;
   align-items: center !important;
+  background: var(--color-bg-elevated) !important;
 }
 
 .type-selector :deep(.ant-select-selector:hover) {
-  border-color: var(--secondary-600) !important;
+  border-color: var(--primary-300) !important;
 }
 
 .type-selector :deep(.ant-select-focused .ant-select-selector) {
-  border-color: var(--primary-500) !important;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1) !important;
+  border-color: var(--primary-400) !important;
+  box-shadow: 0 0 0 3px var(--primary-50) !important;
 }
 
 .type-selector :deep(.ant-select-selection-item) {
-  display: flex !important;
-  align-items: center !important;
-  gap: var(--spacing-2) !important;
-}
-
-.type-selector :deep(.ant-select-selection-item) {
-  display: flex !important;
-  align-items: center !important;
-  gap: var(--spacing-2) !important;
-}
-
-.type-selector :deep(.ant-select-item) {
   display: flex !important;
   align-items: center !important;
   gap: var(--spacing-2) !important;
@@ -460,9 +443,9 @@ onMounted(() => {
 }
 
 .generate-btn {
-  background: var(--accent-500) !important;
-  border-color: var(--accent-500) !important;
-  color: var(--gray-900) !important;
+  background: var(--primary-500) !important;
+  border-color: var(--primary-500) !important;
+  color: white !important;
   font-weight: var(--font-semibold) !important;
   border-radius: var(--radius-lg) !important;
   height: 40px !important;
@@ -474,9 +457,8 @@ onMounted(() => {
 }
 
 .generate-btn:hover {
-  background: var(--primary-400) !important;
-  border-color: var(--primary-400) !important;
-  color: white !important;
+  background: var(--primary-600) !important;
+  border-color: var(--primary-600) !important;
   transform: translateY(-2px) !important;
   box-shadow: var(--shadow-lg) !important;
 }
@@ -490,7 +472,7 @@ onMounted(() => {
   transform: translate(2px, -2px);
 }
 
-/* 快捷模板 */
+/* 快捷模板 - Chips */
 .quick-templates {
   display: flex;
   gap: var(--spacing-3);
@@ -500,20 +482,21 @@ onMounted(() => {
 }
 
 .template-btn {
-  background: white;
-  border: 2px solid var(--secondary-300);
-  color: var(--secondary-600);
-  border-radius: var(--radius-xl);
-  padding: var(--spacing-2) var(--spacing-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-line-strong);
+  color: var(--color-text-soft);
+  border-radius: var(--radius-full);
+  padding: var(--spacing-2) var(--spacing-5);
   font-weight: var(--font-medium);
   transition: var(--transition-all);
   white-space: nowrap;
+  backdrop-filter: blur(8px);
 }
 
 .template-btn:hover {
-  background: var(--secondary-600);
-  border-color: var(--secondary-600);
-  color: white;
+  background: var(--primary-50);
+  border-color: var(--primary-300);
+  color: var(--primary-600);
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }
@@ -535,18 +518,18 @@ onMounted(() => {
   font-size: var(--text-3xl);
   font-weight: var(--font-bold);
   margin: 0;
-  color: var(--deep-600);
+  color: var(--color-text);
 }
 
 .section-header :deep(.ant-btn-link) {
-  color: var(--primary-600);
+  color: var(--primary-500);
   font-weight: var(--font-medium);
   font-size: var(--text-base);
   transition: var(--transition-colors);
 }
 
 .section-header :deep(.ant-btn-link:hover) {
-  color: var(--primary-700);
+  color: var(--primary-600);
 }
 
 /* 应用网格 */
@@ -563,23 +546,22 @@ onMounted(() => {
 }
 
 .empty-placeholder :deep(.ant-empty-description) {
-  color: var(--gray-600);
+  color: var(--color-text-soft);
   font-size: var(--text-base);
   margin-bottom: var(--spacing-4);
 }
 
 .empty-placeholder :deep(.ant-btn-primary) {
-  background: var(--accent-500) !important;
-  border-color: var(--accent-500) !important;
-  color: var(--gray-900) !important;
+  background: var(--primary-500) !important;
+  border-color: var(--primary-500) !important;
+  color: white !important;
   font-weight: var(--font-semibold) !important;
   border-radius: var(--radius-lg) !important;
 }
 
 .empty-placeholder :deep(.ant-btn-primary:hover) {
-  background: var(--primary-400) !important;
-  border-color: var(--primary-400) !important;
-  color: white !important;
+  background: var(--primary-600) !important;
+  border-color: var(--primary-600) !important;
   transform: translateY(-2px) !important;
   box-shadow: var(--shadow-lg) !important;
 }
@@ -604,7 +586,7 @@ onMounted(() => {
   }
 
   .input-container {
-    padding: var(--spacing-4);
+    padding: var(--spacing-5);
   }
 
   .input-actions {
