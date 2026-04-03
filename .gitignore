@@ -39,5 +39,8 @@ node_modules/
 ### Claude Code ###
 .claude/
 
+### GitHub local config ###
+.github/
+
 ### 生成的代码文件 ###
 /tmp/
