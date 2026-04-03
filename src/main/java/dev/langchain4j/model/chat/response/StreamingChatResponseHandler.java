@@ -21,23 +21,23 @@ public interface StreamingChatResponseHandler {
     void onPartialResponse(String partialResponse);
 
     /**
-     * TODO
-     * TODO this callback is called as soon as partial tool is available
-     * TODO can be called multiple times
-     * TODO can be called for multiple tool executions,
-     * TODO give example of how this and other callback can be called
-     * @param index TODO
-     * @param partialToolExecutionRequest TODO
+     * TODO.md
+     * TODO.md this callback is called as soon as partial tool is available
+     * TODO.md can be called multiple times
+     * TODO.md can be called for multiple tool executions,
+     * TODO.md give example of how this and other callback can be called
+     * @param index TODO.md
+     * @param partialToolExecutionRequest TODO.md
      */
     default void onPartialToolExecutionRequest(int index, ToolExecutionRequest partialToolExecutionRequest) {
     }
 
     /**
-     * TODO
-     * TODO this callback is called as soon as a single tool execution request is complete
-     * TODO can be called multiple times
-     * @param index TODO
-     * @param completeToolExecutionRequest TODO
+     * TODO.md
+     * TODO.md this callback is called as soon as a single tool execution request is complete
+     * TODO.md can be called multiple times
+     * @param index TODO.md
+     * @param completeToolExecutionRequest TODO.md
      */
     default void onCompleteToolExecutionRequest(int index, ToolExecutionRequest completeToolExecutionRequest) {
     }

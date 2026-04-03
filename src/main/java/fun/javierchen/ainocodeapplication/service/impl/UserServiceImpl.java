@@ -13,6 +13,7 @@ import fun.javierchen.ainocodeapplication.model.enums.UserRoleEnum;
 import fun.javierchen.ainocodeapplication.model.vo.LoginUserVO;
 import fun.javierchen.ainocodeapplication.model.vo.UserVO;
 import fun.javierchen.ainocodeapplication.service.UserService;
+import fun.javierchen.ainocodeapplication.utils.JwtUtil;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -115,7 +116,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         // 3. 记录用户的登录态
         request.getSession().setAttribute(USER_LOGIN_STATE, user);
-        return this.getLoginUserVO(user);
+        LoginUserVO loginUserVO = this.getLoginUserVO(user);
+        loginUserVO.setToken(JwtUtil.generateToken(user.getId()));
+        return loginUserVO;
     }
 
 
@@ -127,13 +130,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      */
     @Override
     public User getLoginUser(HttpServletRequest request) {
-        // 先判断是否已登录
+        // 优先从 JWT token 中获取用户（由 JwtAuthInterceptor 设置）
+        Long tokenUserId = (Long) request.getAttribute("loginUserId");
+        if (tokenUserId != null) {
+            User currentUser = this.getById(tokenUserId);
+            if (currentUser == null) {
+                throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+            }
+            return currentUser;
+        }
+        // 回退到 session 方式
         Object userObj = request.getSession().getAttribute(USER_LOGIN_STATE);
         User currentUser = (User) userObj;
         if (currentUser == null || currentUser.getId() == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
         }
-        // 从数据库查询（追求性能的话可以注释，直接走缓存）
         long userId = currentUser.getId();
         currentUser = this.getById(userId);
         if (currentUser == null) {
@@ -150,13 +161,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      */
     @Override
     public User getLoginUserPermitNull(HttpServletRequest request) {
-        // 先判断是否已登录
+        Long tokenUserId = (Long) request.getAttribute("loginUserId");
+        if (tokenUserId != null) {
+            return this.getById(tokenUserId);
+        }
         Object userObj = request.getSession().getAttribute(USER_LOGIN_STATE);
         User currentUser = (User) userObj;
         if (currentUser == null || currentUser.getId() == null) {
             return null;
         }
-        // 从数据库查询（追求性能的话可以注释，直接走缓存）
         long userId = currentUser.getId();
         return this.getById(userId);
     }
@@ -169,7 +182,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      */
     @Override
     public boolean isAdmin(HttpServletRequest request) {
-        // 仅管理员可查询
+        Long tokenUserId = (Long) request.getAttribute("loginUserId");
+        if (tokenUserId != null) {
+            User user = this.getById(tokenUserId);
+            return isAdmin(user);
+        }
         Object userObj = request.getSession().getAttribute(USER_LOGIN_STATE);
         User user = (User) userObj;
         return isAdmin(user);
