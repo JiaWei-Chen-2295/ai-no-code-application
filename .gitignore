@@ -36,5 +36,8 @@ build/
 node_modules/
 .swc/
 
+### Claude Code ###
+.claude/
+
 ### 生成的代码文件 ###
 /tmp/
