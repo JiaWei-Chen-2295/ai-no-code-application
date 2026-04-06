@@ -442,6 +442,17 @@ const streamChat = async (userMessage: string) => {
                 loadVersions().then(() => {
                     updatePreviewUrl()
                 })
+                // 延迟刷新封面截图
+                setTimeout(async () => {
+                    try {
+                        const res = await getAppVoById({ id: app.value.id })
+                        if (res.data.code === 0 && res.data.data?.cover) {
+                            app.value.cover = res.data.data.cover + '?t=' + Date.now()
+                        }
+                    } catch {
+                        // 静默失败
+                    }
+                }, 5000)
                 return
             }
 
@@ -557,7 +568,7 @@ const updatePreviewUrl = () => {
     const hasEnoughHistory = messages.value.length >= 2
     if (!isGenerated.value && !hasEnoughHistory) return
 
-    const baseUrl = 'http://localhost:8081'
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || ''
     const isVueProject = app.value.codeGenType === 'vueProject'
 
     if (selectedVersion.value === 'latest') {
@@ -602,7 +613,10 @@ const refreshPreview = () => {
 // 在新窗口打开
 const openInNewTab = () => {
     if (previewUrl.value) {
-        window.open(previewUrl.value, '_blank')
+        const url = previewUrl.value.startsWith('http')
+            ? previewUrl.value
+            : window.location.origin + previewUrl.value
+        window.open(url, '_blank')
     }
 }
 

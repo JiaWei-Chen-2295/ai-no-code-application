@@ -496,6 +496,30 @@ public class StaticResourceController {
     }
 
     /**
+     * 提供封面图片访问
+     * 访问格式：http://localhost:port/api/static/covers/{appId}.png
+     */
+    @GetMapping("/covers/{filename}")
+    public ResponseEntity<org.springframework.core.io.Resource> serveCoverImage(
+            @PathVariable String filename) {
+        // 校验文件名，防止路径穿越
+        if (!filename.matches("\\d+\\.png")) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        File coverFile = new File(PREVIEW_ROOT_DIR + "/covers/" + filename);
+        if (!coverFile.exists()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        org.springframework.core.io.Resource resource = new FileSystemResource(coverFile);
+        return ResponseEntity.ok()
+                .header("Content-Type", "image/png")
+                .header("Cache-Control", "public, max-age=3600")
+                .body(resource);
+    }
+
+    /**
      * 提供静态资源访问，支持目录重定向（部署后访问）
      * 访问格式：http://localhost:port/api/static/{deployKey}[/{fileName}]
      */

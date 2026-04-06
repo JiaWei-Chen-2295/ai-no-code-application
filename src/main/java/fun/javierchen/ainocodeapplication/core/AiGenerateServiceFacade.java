@@ -15,11 +15,14 @@ import fun.javierchen.ainocodeapplication.exceptiom.BusinessException;
 import fun.javierchen.ainocodeapplication.exceptiom.ErrorCode;
 import fun.javierchen.ainocodeapplication.model.User;
 import fun.javierchen.ainocodeapplication.model.entity.ChatHistory;
+import fun.javierchen.ainocodeapplication.model.entity.App;
 import fun.javierchen.ainocodeapplication.service.ChatHistoryService;
 import fun.javierchen.ainocodeapplication.service.AppService;
+import fun.javierchen.ainocodeapplication.service.ScreenshotService;
+import fun.javierchen.ainocodeapplication.constant.CodeFileConstant;
 import jakarta.annotation.Resource;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
@@ -27,6 +30,8 @@ import reactor.core.publisher.Flux;
 import static com.mybatisflex.core.query.QueryMethods.max;
 
 import java.io.File;
+import java.time.LocalDateTime;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -36,7 +41,6 @@ import java.util.function.Consumer;
  */
 @Slf4j
 @Component
-@AllArgsConstructor
 public class AiGenerateServiceFacade {
 
     @Resource
@@ -60,6 +64,18 @@ public class AiGenerateServiceFacade {
 
     @Resource
     private AppService appService;
+
+    @Resource
+    private ScreenshotService screenshotService;
+
+    @Value("${app.screenshot.base-url}")
+    private String screenshotBaseUrl;
+
+    @Value("${app.screenshot.max-retries:3}")
+    private int maxRetries;
+
+    @Value("${app.screenshot.enabled:true}")
+    private boolean screenshotEnabled;
 
     /**
      * 根据用户的输入生成代码并保存 返回代码保存的目录
@@ -196,6 +212,8 @@ public class AiGenerateServiceFacade {
                         CodeParseResult parseResult = new CodeParseResult(true, true, true, null);
                         onCompleteCallback.accept(parseResult, version);
                     }
+                    // 异步截图保存封面
+                    captureAndSaveCoverAsync(appId, version);
                     log.info("Vue项目AI生成完成，项目目录: {}, 版本: {}",
                             projectDir.getAbsolutePath(), version);
                 })
@@ -271,6 +289,41 @@ public class AiGenerateServiceFacade {
     }
 
     /**
+     * 异步截图并保存封面
+     * 使用指数退避重试：1s, 2s, 4s
+     */
+    private void captureAndSaveCoverAsync(Long appId, int version) {
+        if (!screenshotEnabled) return;
+
+        CompletableFuture.runAsync(() -> {
+            String previewUrl = screenshotBaseUrl + "/api/static/preview/" + appId + "/" + version + "/";
+            String coverDir = CodeFileConstant.CODE_FILE_PATH + File.separator + "covers";
+            new File(coverDir).mkdirs();
+            File coverFile = new File(coverDir, appId + ".png");
+
+            for (int attempt = 1; attempt <= maxRetries; attempt++) {
+                try {
+                    long delay = 1000L * (1L << (attempt - 1));
+                    Thread.sleep(delay);
+                    screenshotService.captureScreenshot(previewUrl, coverFile);
+
+                    App updateApp = new App();
+                    updateApp.setId(appId);
+                    updateApp.setCover("/api/static/covers/" + appId + ".png");
+                    updateApp.setUpdateTime(LocalDateTime.now());
+                    appService.updateById(updateApp);
+
+                    log.info("App cover captured: appId={}, version={}, attempt={}", appId, version, attempt);
+                    return;
+                } catch (Exception e) {
+                    log.warn("Screenshot attempt {}/{} failed for app {}: {}", attempt, maxRetries, appId, e.getMessage());
+                }
+            }
+            log.warn("All {} screenshot attempts failed for app {}", maxRetries, appId);
+        });
+    }
+
+    /**
      * 统一流式处理类
      *
      * @param result
@@ -300,6 +353,9 @@ public class AiGenerateServiceFacade {
                         File file = CodeFileSaverExecutor.saveCodeFile(parseResult.getParsedCode(), codeGenType, appId, version);
                         log.info("代码解析成功，保存到：{}，版本号：{}，包含有效代码：{}",
                                 file.getAbsolutePath(), version, parseResult.isHasValidCode());
+
+                        // 异步截图保存封面
+                        captureAndSaveCoverAsync(appId, version);
                     } else {
                         log.warn("代码解析失败或无有效代码：{}", parseResult.getParseError());
                     }

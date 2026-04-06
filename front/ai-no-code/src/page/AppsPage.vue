@@ -13,23 +13,7 @@
 
     <a-row :gutter="[24, 24]">
       <a-col :xs="24" :sm="12" :lg="8" :xl="6" v-for="app in apps" :key="app.id">
-        <a-card class="app-card" hoverable>
-          <template #cover>
-            <div class="app-cover">
-              <div class="app-icon">📱</div>
-            </div>
-          </template>
-          <template #actions>
-            <a-button type="link" @click="editApp(app)">编辑</a-button>
-            <a-button type="link" @click="viewApp(app)">预览</a-button>
-            <a-button type="link" danger @click="deleteApp(app)">删除</a-button>
-          </template>
-          <a-card-meta :title="app.appName" :description="app.appDesc" />
-          <div class="app-meta">
-            <div class="app-type">类型: {{ app.appType }}</div>
-            <div class="app-time">创建时间: {{ formatTime(app.createTime) }}</div>
-          </div>
-        </a-card>
+        <AppCard :app="app" @view="viewApp" @edit="editApp" @delete="deleteApp" />
       </a-col>
     </a-row>
 
@@ -47,6 +31,7 @@ import { useRouter } from 'vue-router'
 import { message, Modal } from 'ant-design-vue'
 import { Icon } from '@iconify/vue'
 import { listMyAppVoByPage, deleteMyApp as deleteAppApi } from '@/api/appController'
+import AppCard from '@/components/AppCard.vue'
 
 const router = useRouter()
 const apps = ref<API.AppVO[]>([])
@@ -97,10 +82,6 @@ const deleteApp = (app: API.AppVO) => {
       }
     },
   })
-}
-
-const formatTime = (time: string) => {
-  return new Date(time).toLocaleDateString()
 }
 
 onMounted(() => {
@@ -201,51 +182,6 @@ onMounted(() => {
 
 .apps-content :deep(.ant-card-actions .ant-btn-link[danger]:hover) {
   color: var(--error-600) !important;
-}
-
-.app-cover {
-  height: 120px;
-  background: linear-gradient(135deg, var(--primary-600) 0%, var(--secondary-600) 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
-}
-
-.app-cover::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: radial-gradient(circle at 30% 30%, rgba(255, 220, 0, 0.3), transparent 50%);
-}
-
-.app-icon {
-  font-size: 48px;
-  color: white;
-  z-index: 1;
-  position: relative;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  transition: var(--transition-transform);
-}
-
-.app-card:hover .app-icon {
-  transform: scale(1.1) rotate(10deg);
-}
-
-.app-meta {
-  margin-top: var(--spacing-3);
-  font-size: var(--text-xs);
-  color: var(--gray-600);
-}
-
-.app-type {
-  margin-bottom: var(--spacing-1);
-  font-weight: var(--font-medium);
-  color: var(--secondary-600);
 }
 
 .empty-state {
