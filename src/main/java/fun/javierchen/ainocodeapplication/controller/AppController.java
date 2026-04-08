@@ -3,6 +3,8 @@ package fun.javierchen.ainocodeapplication.controller;
 import cn.hutool.json.JSONUtil;
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
+import dev.langchain4j.guardrail.InputGuardrailException;
+import dev.langchain4j.guardrail.OutputGuardrailException;
 import fun.javierchen.ainocodeapplication.ai.model.enums.CodeGenTypeEnum;
 import fun.javierchen.ainocodeapplication.annotation.AuthCheck;
 import fun.javierchen.ainocodeapplication.common.BaseResponse;
@@ -20,6 +22,7 @@ import fun.javierchen.ainocodeapplication.utils.ResultUtils;
 import fun.javierchen.ainocodeapplication.utils.ThrowUtils;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.http.MediaType;
@@ -42,6 +45,7 @@ import static fun.javierchen.ainocodeapplication.constant.AppConstant.SSE_END_FL
  */
 @RestController
 @RequestMapping("/app")
+@Slf4j
 public class AppController {
 
     @Resource
@@ -322,22 +326,63 @@ public class AppController {
     public Flux<ServerSentEvent<String>> chatGenCode(@RequestParam Long appId,
                                                      @RequestParam String message,
                                                      HttpServletRequest request) {
-
-        ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用 ID 不能为空");
-        ThrowUtils.throwIf(StringUtils.isBlank(message), ErrorCode.PARAMS_ERROR, "用户消息不能为空");
+        // 在进入响应式管道前提前获取登录用户（位于 Servlet 线程，HttpSession 可访问）
         User loginUser = userService.getLoginUser(request);
-        Flux<String> contentFlux = appService.chatGenCode(appId, message, loginUser);
-        // 封装流式输出的内容 防止前端丢失空格
-        return contentFlux.map(
-                chunk -> {
-                    Map<String, String> wrapper = Map.of("d", chunk);
-                    return ServerSentEvent.<String>builder()
-                            .data(JSONUtil.toJsonStr(wrapper))
-                            .build();
-                }
-        ).concatWith(Mono.just(ServerSentEvent.<String>builder()
+
+        // 用 Flux.defer() 将所有逻辑（包括同步抛出的业务异常）包入响应式管道，
+        // 使得 appService.chatGenCode() 内部的同步 throw 也能被 onErrorResume 捕获，
+        // 从而统一以结构化 SSE 错误帧形式返回给前端，避免 EventSource.onerror 无法读取错误原因。
+        Flux<ServerSentEvent<String>> stream = Flux.defer(() -> {
+            ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用 ID 不能为空");
+            ThrowUtils.throwIf(StringUtils.isBlank(message), ErrorCode.PARAMS_ERROR, "用户消息不能为空");
+
+            Flux<String> contentFlux = appService.chatGenCode(appId, message, loginUser);
+            // 正常内容帧：{"d": "chunk"}
+            return contentFlux.map(chunk -> {
+                Map<String, String> wrapper = Map.of("d", chunk);
+                return ServerSentEvent.<String>builder()
+                        .data(JSONUtil.toJsonStr(wrapper))
+                        .build();
+            });
+        });
+
+        // 所有错误（同步抛出 + 响应式信号）统一在此处理，转为结构化错误帧
+        // 格式：{"error": true, "code": <ErrorCode>, "message": "<中文消息>"}
+        Flux<ServerSentEvent<String>> withErrorHandling = stream.onErrorResume(e -> {
+            int code;
+            String msg;
+            if (e instanceof InputGuardrailException) {
+                code = ErrorCode.PARAMS_ERROR.getCode();
+                msg = extractGuardrailMessage(e.getMessage());
+            } else if (e instanceof OutputGuardrailException) {
+                code = ErrorCode.OPERATION_ERROR.getCode();
+                msg = extractGuardrailMessage(e.getMessage());
+            } else if (e instanceof BusinessException be) {
+                code = be.getCode();
+                msg = be.getMessage();
+            } else {
+                code = ErrorCode.SYSTEM_ERROR.getCode();
+                msg = "系统错误，请稍后重试";
+                log.error("Unexpected error in chat/gen/code stream", e);
+            }
+            Map<String, Object> errorData = Map.of("error", true, "code", code, "message", msg);
+            return Mono.just(ServerSentEvent.<String>builder()
+                    .data(JSONUtil.toJsonStr(errorData))
+                    .build());
+        });
+
+        // 追加终止帧，让前端无论成功还是错误都能正常关闭 EventSource
+        return withErrorHandling.concatWith(Mono.just(ServerSentEvent.<String>builder()
                 .data(JSONUtil.toJsonStr(SSE_END_FLAG))
                 .build()));
+    }
+
+    /** 从 LangChain4j guardrail 异常消息中提取用户可见的业务消息 */
+    private static String extractGuardrailMessage(String raw) {
+        if (raw == null) return "请求内容未通过安全检查，请修改后重试";
+        final String prefix = "failed with this message: ";
+        int idx = raw.indexOf(prefix);
+        return idx >= 0 ? raw.substring(idx + prefix.length()).trim() : raw;
     }
 
     /**

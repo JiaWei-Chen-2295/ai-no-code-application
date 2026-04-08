@@ -457,8 +457,17 @@ const streamChat = async (userMessage: string) => {
             }
 
             try {
-                // 解析SSE数据格式：{"d":"文本内容"}
+                // 解析SSE数据格式：{"d":"文本内容"} 或 {"error":true,"code":...,"message":"..."}
                 const chunk = JSON.parse(data)
+                if (chunk.error === true) {
+                    // 守卫/业务错误帧：显示错误消息并等待 __DONE__ 关闭
+                    if (timeout) clearTimeout(timeout)
+                    clearTypingEffect()
+                    messages.value.splice(messageIndex, 1) // 移除空的 AI 消息占位
+                    message.error(chunk.message || '请求被拒绝，请修改后重试')
+                    isStreaming.value = false
+                    return
+                }
                 if (chunk.d) {
                     aiMessage += chunk.d
                     // 更新打字缓冲区内容

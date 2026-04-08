@@ -4,10 +4,19 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import dev.langchain4j.community.store.memory.chat.redis.RedisChatMemoryStore;
 import dev.langchain4j.data.message.ToolExecutionResultMessage;
+import dev.langchain4j.guardrail.InputGuardrail;
+import dev.langchain4j.guardrail.OutputGuardrail;
+import dev.langchain4j.guardrail.config.OutputGuardrailsConfig;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.service.AiServices;
+import fun.javierchen.ainocodeapplication.ai.guardrails.CodeExfiltrationOutputGuardrail;
+import fun.javierchen.ainocodeapplication.ai.guardrails.ContentModerationInputGuardrail;
+import fun.javierchen.ainocodeapplication.ai.guardrails.ContentSafetyOutputGuardrail;
+import fun.javierchen.ainocodeapplication.ai.guardrails.GuardrailLlmJudge;
+import fun.javierchen.ainocodeapplication.ai.guardrails.InputLengthGuardrail;
+import fun.javierchen.ainocodeapplication.ai.guardrails.PromptInjectionGuardrail;
 import fun.javierchen.ainocodeapplication.ai.model.enums.CodeGenTypeEnum;
 import fun.javierchen.ainocodeapplication.ai.tools.AiTool;
 import fun.javierchen.ainocodeapplication.service.ChatHistoryService;
@@ -19,6 +28,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Primary;
 
 import java.time.Duration;
+import java.util.List;
 
 @Configuration
 @Slf4j
@@ -97,25 +107,61 @@ public class AiCodeGeneratorServiceFactory {
             log.warn("未收集到任何 AI 工具");
         }
 
-
-        // 根据代码生成类型选择不同的模型配置
+        // 根据代码生成类型选择不同的模型配置，再统一叠加 Guardrails
         return switch (codeGenType) {
             // Vue 项目生成使用推理模型
-            case VUE_PROJECT -> AiServices.builder(AiCodeGeneratorService.class)
-                    .streamingChatModel(reasoningStreamingChatModel)
-                    .chatMemoryProvider(memoryId -> chatMemory)
-                    .tools(aiTools)
-                    .hallucinatedToolNameStrategy(toolExecutionRequest -> ToolExecutionResultMessage.from(
-                            toolExecutionRequest, "Error: there is no tool called " + toolExecutionRequest.name()
-                    ))
-                    .build();
+            case VUE_PROJECT -> applyCommonGuardrails(
+                    AiServices.builder(AiCodeGeneratorService.class)
+                            .streamingChatModel(reasoningStreamingChatModel)
+                            .chatMemoryProvider(memoryId -> chatMemory)
+                            .tools(aiTools)
+                            .hallucinatedToolNameStrategy(toolExecutionRequest -> ToolExecutionResultMessage.from(
+                                    toolExecutionRequest, "Error: there is no tool called " + toolExecutionRequest.name()
+                            )),
+                    codeGenType
+            ).build();
             // HTML 和多文件生成使用默认模型
-            case HTML, MUTI_FILE -> AiServices.builder(AiCodeGeneratorService.class)
-                    .chatModel(chatModel)
-                    .streamingChatModel(streamingChatModel)
-                    .chatMemory(chatMemory)
-                    .build();
+            case HTML, MUTI_FILE -> applyCommonGuardrails(
+                    AiServices.builder(AiCodeGeneratorService.class)
+                            .chatModel(chatModel)
+                            .streamingChatModel(streamingChatModel)
+                            .chatMemory(chatMemory),
+                    codeGenType
+            ).build();
         };
+    }
+
+    /**
+     * 向任意 builder 分支追加公共安全 Guardrails。
+     * 不替换原有模型 / Memory / Tool 配置，仅叠加安全层。
+     *
+     * @param builder     已配置好业务能力的 AiServices builder
+     * @param codeGenType 生成类型（用于确定 InputLengthGuardrail 的长度上限）
+     * @return 追加 Guardrails 后的 builder（仍需调用 .build()）
+     */
+    @SuppressWarnings({"unchecked", "varargs"})
+    private AiServices<AiCodeGeneratorService> applyCommonGuardrails(
+            AiServices<AiCodeGeneratorService> builder,
+            CodeGenTypeEnum codeGenType
+    ) {
+        int maxInputLength = (codeGenType == CodeGenTypeEnum.VUE_PROJECT) ? 8000 : 5000;
+        var llmJudge = new GuardrailLlmJudge(chatModel);
+
+        List<InputGuardrail> inputGuardrails = List.of(
+                new InputLengthGuardrail(maxInputLength),
+                new PromptInjectionGuardrail(llmJudge),
+                new ContentModerationInputGuardrail(llmJudge)
+        );
+
+        List<OutputGuardrail> outputGuardrails = List.of(
+                new ContentSafetyOutputGuardrail(llmJudge),
+                new CodeExfiltrationOutputGuardrail()
+        );
+
+        return builder
+                .inputGuardrails(inputGuardrails.toArray(new InputGuardrail[0]))
+                .outputGuardrails(outputGuardrails.toArray(new OutputGuardrail[0]))
+                .outputGuardrailsConfig(OutputGuardrailsConfig.builder().maxRetries(2).build());
     }
 
     /**
