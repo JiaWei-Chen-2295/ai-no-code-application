@@ -135,6 +135,16 @@ public class AiCodeGeneratorServiceFactory {
      * 向任意 builder 分支追加公共安全 Guardrails。
      * 不替换原有模型 / Memory / Tool 配置，仅叠加安全层。
      *
+     * <p><b>Output guardrails 与流式响应的兼容性说明</b>：<br>
+     * LangChain4j 的 OutputGuardrail 机制会在流式输出期间
+     * 将所有 token 缓存到 {@code responseBuffer}，等待完整响应生成后才统一执行校验，
+     * 校验通过后再一次性将所有缓存 token 推送给订阅者。
+     * 这导致 SSE 推流时所有消息几乎同时到达，失去实时性。<br>
+     * 因此，对 HTML/MUTI_FILE 类型（纯文本流式输出），不在此处挂载 Output Guardrails；
+     * 改为在 {@code codeGenerateAndSaveStream()} 的 {@code concatWith(Flux.defer(...))} 中
+     * 对完整积累文本执行 post-stream 安全校验，兼顾安全与流式实时性。<br>
+     * VUE_PROJECT 主要依赖工具调用（文件读写），文本 token 极少，保留 Output Guardrails 无影响。
+     *
      * @param builder     已配置好业务能力的 AiServices builder
      * @param codeGenType 生成类型（用于确定 InputLengthGuardrail 的长度上限）
      * @return 追加 Guardrails 后的 builder（仍需调用 .build()）
@@ -153,15 +163,21 @@ public class AiCodeGeneratorServiceFactory {
                 new ContentModerationInputGuardrail(llmJudge)
         );
 
-        List<OutputGuardrail> outputGuardrails = List.of(
-                new ContentSafetyOutputGuardrail(llmJudge),
-                new CodeExfiltrationOutputGuardrail()
-        );
+        builder = builder.inputGuardrails(inputGuardrails.toArray(new InputGuardrail[0]));
 
-        return builder
-                .inputGuardrails(inputGuardrails.toArray(new InputGuardrail[0]))
-                .outputGuardrails(outputGuardrails.toArray(new OutputGuardrail[0]))
-                .outputGuardrailsConfig(OutputGuardrailsConfig.builder().maxRetries(2).build());
+        // HTML/MUTI_FILE: skip output guardrails here — post-stream check is done in
+        // AiGenerateServiceFacade.codeGenerateAndSaveStream() to preserve real-time SSE streaming.
+        if (codeGenType == CodeGenTypeEnum.VUE_PROJECT) {
+            List<OutputGuardrail> outputGuardrails = List.of(
+                    new ContentSafetyOutputGuardrail(llmJudge),
+                    new CodeExfiltrationOutputGuardrail()
+            );
+            builder = builder
+                    .outputGuardrails(outputGuardrails.toArray(new OutputGuardrail[0]))
+                    .outputGuardrailsConfig(OutputGuardrailsConfig.builder().maxRetries(2).build());
+        }
+
+        return builder;
     }
 
     /**

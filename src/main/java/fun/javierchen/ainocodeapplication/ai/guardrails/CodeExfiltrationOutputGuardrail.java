@@ -61,15 +61,20 @@ public class CodeExfiltrationOutputGuardrail implements OutputGuardrail {
             Pattern.CASE_INSENSITIVE
     );
 
-    @Override
-    public OutputGuardrailResult validate(OutputGuardrailRequest request) {
-        String text = request.responseFromLLM().aiMessage().text();
-        if (text == null || text.isBlank()) return success();
+    /**
+     * Check plain text for security violations without needing OutputGuardrailRequest.
+     * Used for post-stream validation in reactive pipelines where output guardrails
+     * would otherwise buffer the entire response before emitting any tokens.
+     *
+     * @return violation message if a threat is detected, null if safe
+     */
+    public String checkText(String text) {
+        if (text == null || text.isBlank()) return null;
 
         // 第一层：高威胁模式检测
         for (Pattern pattern : THREAT_PATTERNS) {
             if (pattern.matcher(text).find()) {
-                return fatal("生成的代码包含不安全的模式，已拦截");
+                return "生成的代码包含不安全的模式，已拦截";
             }
         }
 
@@ -78,7 +83,7 @@ public class CodeExfiltrationOutputGuardrail implements OutputGuardrail {
         while (scriptMatcher.find()) {
             String src = scriptMatcher.group(1);
             if (isExternalUrl(src) && !isWhitelisted(src)) {
-                return fatal("生成的代码包含不安全的模式，已拦截");
+                return "生成的代码包含不安全的模式，已拦截";
             }
         }
 
@@ -87,11 +92,18 @@ public class CodeExfiltrationOutputGuardrail implements OutputGuardrail {
         while (fetchMatcher.find()) {
             String url = fetchMatcher.group(1);
             if (!isWhitelisted(url)) {
-                return fatal("生成的代码包含不安全的模式，已拦截");
+                return "生成的代码包含不安全的模式，已拦截";
             }
         }
 
-        return success();
+        return null;
+    }
+
+    @Override
+    public OutputGuardrailResult validate(OutputGuardrailRequest request) {
+        String text = request.responseFromLLM().aiMessage().text();
+        String violation = checkText(text);
+        return violation != null ? fatal(violation) : success();
     }
 
     private boolean isExternalUrl(String url) {

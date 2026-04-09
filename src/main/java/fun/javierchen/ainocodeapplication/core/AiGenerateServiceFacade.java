@@ -7,6 +7,7 @@ import fun.javierchen.ainocodeapplication.ai.AiCodeGeneratorServiceFactory;
 import fun.javierchen.ainocodeapplication.ai.model.HtmlCodeResult;
 import fun.javierchen.ainocodeapplication.ai.model.MultiFileCodeResult;
 import fun.javierchen.ainocodeapplication.ai.model.enums.CodeGenTypeEnum;
+import fun.javierchen.ainocodeapplication.ai.guardrails.CodeExfiltrationOutputGuardrail;
 import fun.javierchen.ainocodeapplication.core.handler.StreamHandlerExecutor;
 import fun.javierchen.ainocodeapplication.core.model.CodeParseResult;
 import fun.javierchen.ainocodeapplication.core.parser.CodeParserExecutor;
@@ -335,9 +336,8 @@ public class AiGenerateServiceFacade {
     private Flux<String> codeGenerateAndSaveStream(Flux<String> result, CodeGenTypeEnum codeGenType,
                                                    Long appId, BiConsumer<CodeParseResult, Integer> onCompleteCallback) {
         StringBuilder sb = new StringBuilder();
-        return result.doOnNext(
-                        sb::append
-                )
+        Flux<String> stream = result
+                .doOnNext(sb::append)
                 .doOnComplete(() -> {
                     String strResult = sb.toString();
                     // 使用新的解析器，一次解析获取所有信息
@@ -365,6 +365,20 @@ public class AiGenerateServiceFacade {
                         onCompleteCallback.accept(parseResult, version);
                     }
                 });
+
+        // Post-stream security check: OutputGuardrails on AiServices buffer all streaming tokens
+        // before validating, breaking real-time SSE. Instead, run CodeExfiltrationOutputGuardrail
+        // here after the full response has already been streamed to the client.
+        // If a violation is detected, an error frame is sent and the front-end discards the content.
+        CodeExfiltrationOutputGuardrail exfiltrationChecker = new CodeExfiltrationOutputGuardrail();
+        return stream.concatWith(Flux.defer(() -> {
+            String violation = exfiltrationChecker.checkText(sb.toString());
+            if (violation != null) {
+                log.warn("[post-stream] 输出安全校验未通过 appId={}: {}", appId, violation);
+                return Flux.error(new BusinessException(ErrorCode.OPERATION_ERROR, violation));
+            }
+            return Flux.empty();
+        }));
     }
 
     /**

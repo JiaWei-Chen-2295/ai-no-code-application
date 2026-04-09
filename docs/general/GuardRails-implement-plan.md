@@ -12,15 +12,18 @@
 ```
 User Input → [InputLengthGuardrail] → [PromptInjectionGuardrail] → [ContentModerationInputGuardrail]
     → LLM Call →
-Output → [ContentSafetyOutputGuardrail] → [CodeExfiltrationOutputGuardrail] → User
+Output (VUE_PROJECT)    → [ContentSafetyOutputGuardrail] → [CodeExfiltrationOutputGuardrail] → User
+Output (HTML/MUTI_FILE) → stream tokens → (post-stream) [CodeExfiltrationOutputGuardrail.checkText()] → User
 ```
 
-Guardrails 通过 `AiServices.builder()` 注入，在 `AiCodeGeneratorServiceFactory.java` 中做 **统一的 Guardrails 配置**，但**保留两条现有 builder 分支**：
+Guardrails 通过 `AiServices.builder()` 注入，在 `AiCodeGeneratorServiceFactory.java` 中做**按类型差异化**的 Guardrails 配置，**保留两条现有 builder 分支**：
 
-- `VUE_PROJECT` 分支：继续保留 `reasoningStreamingChatModel`、`tools(aiTools)`、`hallucinatedToolNameStrategy(...)`、`chatMemoryProvider(...)`
-- `HTML / MUTI_FILE` 分支：继续保留 `chatModel(...)`、`streamingChatModel(...)`、`chatMemory(...)`
+- `VUE_PROJECT` 分支：继续保留 `reasoningStreamingChatModel`、`tools(aiTools)`、`hallucinatedToolNameStrategy(...)`、`chatMemoryProvider(...)`，**附加完整 Output Guardrails**
+- `HTML / MUTI_FILE` 分支：继续保留 `chatModel(...)`、`streamingChatModel(...)`、`chatMemory(...)`，**仅附加 Input Guardrails**；Output Guardrails 改为 post-stream 方式（见下文）
 
-Guardrails 以“追加公共安全配置”的方式附加到这两条分支上，而不是把 3 种生成类型强行改成同一个 builder 链，避免丢失 Vue 现有的工具调用行为。
+> **⚠️ Output Guardrails 与 SSE 流式响应不兼容问题**  
+> LangChain4j 的 `OutputGuardrail` 机制在 `AiServiceStreamingResponseHandler` 中会把所有 streaming token 缓存到 `responseBuffer`，等到完整响应生成且 guardrail 校验通过后才统一推送，导致 SSE 中所有消息几乎同时到达（几毫秒内），失去实时性。  
+> 解决方案：HTML/MUTI_FILE 类型**不在 builder 上挂载 Output Guardrails**，改为在 `AiGenerateServiceFacade.codeGenerateAndSaveStream()` 的 `concatWith(Flux.defer(...))` 中对完整积累文本执行 post-stream 校验，兼顾安全与实时性。
 
 > **兼容性结论（当前阶段）**  
 > 上游 LangChain4j `1.1.0` 文档已确认 `AiServices.builder()` 支持 `inputGuardrails(...)`、`outputGuardrails(...)`、`outputGuardrailsConfig(...)`，并支持 Output Guardrail 的 `maxRetries`。  
@@ -92,8 +95,9 @@ Guardrails 以“追加公共安全配置”的方式附加到这两条分支上
 - **CDN 白名单**: `picsum.photos`, `unpkg.com`, `cdnjs.cloudflare.com`, `cdn.jsdelivr.net`
 - **结果**:
   - 明确威胁 → `fatal("生成的代码包含不安全的模式，已拦截")`
-  - v1 暂不做 `successWith()` 自动剥离，避免“拦截成功但代码已损坏且仍按成功返回”的隐性问题
-
+  - v1 暂不做 `successWith()` 自动剥离，避免“拦截成功但代码已损坏且仍按成功返回”的隐性问题- **双模式**:
+  - `validate(OutputGuardrailRequest)` — 标准 Guardrail 接口，用于 VUE_PROJECT（builder 挂载）
+  - `checkText(String)` — 提取出的公开方法，供 `AiGenerateServiceFacade` 在 post-stream 中直接调用（HTML/MUTI_FILE）
 ---
 
 ## 共享组件
@@ -150,28 +154,31 @@ Guardrails 以“追加公共安全配置”的方式附加到这两条分支上
 ```java
 private AiServices<AiCodeGeneratorService> applyCommonGuardrails(
         AiServices<AiCodeGeneratorService> builder,
-        CodeGenTypeEnum codeGenType,
-        ChatModel judgeChatModel
+        CodeGenTypeEnum codeGenType
 ) {
-    var llmJudge = new GuardrailLlmJudge(judgeChatModel);
+    var llmJudge = new GuardrailLlmJudge(chatModel);
 
+    // Input guardrails 对所有类型统一挂载
     var inputGuardrails = List.of(
             new InputLengthGuardrail(resolveMaxLength(codeGenType)),
             new PromptInjectionGuardrail(llmJudge),
             new ContentModerationInputGuardrail(llmJudge)
     );
+    builder = builder.inputGuardrails(inputGuardrails.toArray(new InputGuardrail[0]));
 
-    var outputGuardrails = List.of(
-            new ContentSafetyOutputGuardrail(llmJudge),
-            new CodeExfiltrationOutputGuardrail()
-    );
+    // Output guardrails 仅对 VUE_PROJECT 挂载
+    // HTML/MUTI_FILE 由 codeGenerateAndSaveStream() 的 post-stream 校验替代
+    if (codeGenType == CodeGenTypeEnum.VUE_PROJECT) {
+        var outputGuardrails = List.of(
+                new ContentSafetyOutputGuardrail(llmJudge),
+                new CodeExfiltrationOutputGuardrail()
+        );
+        builder = builder
+                .outputGuardrails(outputGuardrails.toArray(new OutputGuardrail[0]))
+                .outputGuardrailsConfig(OutputGuardrailsConfig.builder().maxRetries(2).build());
+    }
 
-    return builder
-            .inputGuardrails(inputGuardrails.toArray(new InputGuardrail[0]))
-            .outputGuardrails(outputGuardrails.toArray(new OutputGuardrail[0]))
-            .outputGuardrailsConfig(OutputGuardrailsConfig.builder()
-                    .maxRetries(2)
-                    .build());
+    return builder;
 }
 ```
 
@@ -213,7 +220,7 @@ HTML / Multi-file 分支保持现有能力不变：
 - `streamingChatModel(streamingChatModel)`
 - `chatMemory(chatMemory)`
 
-然后在 **build() 之前** 追加公共 Guardrails：
+然后在 **build() 之前** 追加公共 Guardrails（仅 Input）：
 
 ```java
 case HTML, MUTI_FILE -> applyCommonGuardrails(
@@ -221,9 +228,10 @@ case HTML, MUTI_FILE -> applyCommonGuardrails(
                 .chatModel(chatModel)
                 .streamingChatModel(streamingChatModel)
                 .chatMemory(chatMemory),
-        codeGenType,
-        chatModel
+        codeGenType
 ).build();
+// Output 安全校验由 AiGenerateServiceFacade.codeGenerateAndSaveStream() 的
+// concatWith(Flux.defer(() -> exfiltrationChecker.checkText(sb.toString()))) 完成
 ```
 
 ### 这样设计的原因
@@ -231,6 +239,7 @@ case HTML, MUTI_FILE -> applyCommonGuardrails(
 - **不破坏 Vue 的工具调用链路**
 - **不把不同生成类型的模型配置硬揉成一个 builder**
 - **Guardrails 的职责清晰：只负责安全，不接管业务分支差异**
+- **HTML/MUTI_FILE 保留 SSE 实时推流体验**：Output Guardrails 的 token 缓冲行为与实时流式不兼容，post-stream 方案在全部 token 传输后再做安全校验，对用户无感知延迟
 - **后续新增生成类型时，只需新增分支 builder，再复用公共 Guardrails 接入**
 
 ---
@@ -255,9 +264,10 @@ case HTML, MUTI_FILE -> applyCommonGuardrails(
 
 ### Phase 3：接入 Output Guardrails
 
-- `ContentSafetyOutputGuardrail`
-- `CodeExfiltrationOutputGuardrail`
-- 配置 `maxRetries=2`
+- `ContentSafetyOutputGuardrail`（VUE_PROJECT builder 挂载；HTML/MUTI_FILE 暂无等效替代）
+- `CodeExfiltrationOutputGuardrail`（VUE_PROJECT builder 挂载 + HTML/MUTI_FILE post-stream `checkText()`）
+- VUE_PROJECT 配置 `maxRetries=2`
+- HTML/MUTI_FILE 的 post-stream 校验位于 `AiGenerateServiceFacade.codeGenerateAndSaveStream()`
 
 ### Phase 4：接入 LLM Judge
 
@@ -440,15 +450,21 @@ eventSource.onmessage = (event) => {
 1. **长度检查**（即时，拦截 90% 滥用） → 2. **注入检测**（正则快速路径） → 3. **内容审核**（最贵放最后）
 
 ### Output 链
-4. **内容安全**（可 `retry()` 重新生成） → 5. **代码窃取检测**（v1 先 `fatal()`，避免自动剥离导致结果损坏）
+
+**VUE_PROJECT**（builder 挂载，工具调用流，token 极少）：  
+4. **内容安全**（可 `retry()` 重新生成） → 5. **代码窃取检测**（`fatal()`）
+
+**HTML/MUTI_FILE**（post-stream，在所有 token 实时推流完成后）：  
+5'. **代码窃取检测**（`checkText()`，命中则发 `BusinessException` 错误帧）  
+*注：ContentSafetyOutputGuardrail 的 LLM 审查在 HTML/MUTI_FILE 链路中暂未覆盖；Input Guardrails 对内容审核的正向拦截已覆盖大部分场景。*
 
 ---
 
 ## 待决事项
 
 - [x] 先完成 compile-level compatibility spike，确认当前依赖组合可直接接入 Guardrails API
-- [x] `InputGuardrailException` / `OutputGuardrailException` 转换为业务错误（`GlobalExceptionHandler`）
-- [ ] 明确 LLM Judge 的超时、失败策略（当前 fail-open，超时未限定）
+- [x] `InputGuardrailException` / `OutputGuardrailException` 转换为业务错误（`GlobalExceptionHandler`）- [x] 修复 HTML/MUTI_FILE SSE 推流延迟：移除 builder 级 Output Guardrails，改用 post-stream `checkText()` 校验
+- [ ] HTML/MUTI_FILE 的 `ContentSafetyOutputGuardrail` 暂缺，评估是否需要 post-stream LLM 审查补齐- [ ] 明确 LLM Judge 的超时、失败策略（当前 fail-open，超时未限定）
 - [ ] 为 Vue 分支补充“工具调用不回退”的回归测试
 - [ ] 考虑是否需要将违规记录写入数据库用于后续分析
 - [ ] CDN 白名单是否需要可配置化（application.yml）
