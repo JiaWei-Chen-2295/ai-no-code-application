@@ -28,7 +28,7 @@ export interface PageResult<T> {
 
 // API
 export const getChatHistory = (data: { appId: string; pageSize?: number; lastCreateTime?: string }) =>
-  http.post<PageResult<ChatHistory>>('/api/chatHistory/app/' + data.appId, data)
+  http.get<PageResult<ChatHistory>>('/api/chatHistory/app/' + data.appId + '?pageSize=' + (data.pageSize || 10) + (data.lastCreateTime ? '&lastCreateTime=' + data.lastCreateTime : ''))
 
 export const getAdminChatHistory = (data: {
   current?: number

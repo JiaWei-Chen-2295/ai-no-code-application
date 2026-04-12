@@ -3,6 +3,7 @@
  */
 
 import http from '../utils/http'
+import { getApiBaseUrl } from '../utils/http'
 import Taro from '@tarojs/taro'
 
 // Types
@@ -102,7 +103,7 @@ export const generateCode = (
 ): Promise<string> => {
   return new Promise((resolve, reject) => {
     let fullText = ''
-    const url = `http://localhost:8081/api/app/chat/gen/code?appId=${appId}&message=${encodeURIComponent(message)}`
+    const url = `${getApiBaseUrl()}/api/app/chat/gen/code?appId=${appId}&message=${encodeURIComponent(message)}`
 
     const task = Taro.request({
       url,

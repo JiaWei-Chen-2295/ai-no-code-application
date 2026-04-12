@@ -7,8 +7,11 @@
 
 .chat-messages {
   flex: 1;
-  padding: 32rpx;
   height: calc(100vh - 160px);
+}
+
+.chat-messages-inner {
+  padding: 32rpx;
 }
 
 .empty-chat {
@@ -91,4 +94,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.chat-bottom-anchor {
+  height: 1px;
 }

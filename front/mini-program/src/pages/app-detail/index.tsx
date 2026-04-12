@@ -6,6 +6,7 @@ import React, { useState, useEffect } from 'react'
 import { View, Text, Image, Button } from '@tarojs/components'
 import Taro, { useRouter } from '@tarojs/taro'
 import { getAppVO, AppVO, getAppVersions, AppVersionVO } from '../../api/app'
+import { getApiBaseUrl } from '../../utils/http'
 import './index.css'
 
 export default function AppDetailPage() {
@@ -71,11 +72,13 @@ export default function AppDetailPage() {
     )
   }
 
+  const coverUrl = app.cover ? getApiBaseUrl() + app.cover : 'https://img.yzcdn.cn/vant/cat.jpeg'
+
   return (
     <View className="detail-container">
       <Image
         className="detail-cover"
-        src={app.cover || 'https://via.placeholder.com/750x400'}
+        src={coverUrl}
         mode="aspectFill"
       />
       <View className="detail-content">

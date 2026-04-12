@@ -5,7 +5,25 @@
 
 import Taro from '@tarojs/taro'
 
-const BASE_URL = 'http://localhost:8081'
+// 从环境变量或存储中获取 BASE_URL
+const getBaseUrl = (): string => {
+  // 优先从存储中获取（运行时可修改）
+  const storedUrl = Taro.getStorageSync<string>('api_base_url')
+  if (storedUrl && typeof storedUrl === 'string') {
+    return storedUrl
+  }
+  
+  // 从环境变量获取（编译时配置）
+  const envUrl = process.env.VITE_API_BASE_URL || process.env.API_BASE_URL
+  if (envUrl && typeof envUrl === 'string') {
+    return envUrl
+  }
+  
+  // 默认值
+  return 'http://localhost:8081'
+}
+
+const BASE_URL = getBaseUrl()
 const TOKEN_STORAGE_KEY = 'token'
 const AUTH_MODE_STORAGE_KEY = 'authMode'
 
@@ -30,8 +48,8 @@ class HttpRequest {
   private token: string = ''
   private authMode: AuthMode = 'guest'
 
-  constructor(baseUrl: string) {
-    this.baseUrl = baseUrl
+  constructor(baseUrl?: string) {
+    this.baseUrl = baseUrl || getBaseUrl()
   }
 
   initAuthFromStorage() {
@@ -51,6 +69,16 @@ class HttpRequest {
   setAuthMode(mode: AuthMode) {
     this.authMode = mode
     Taro.setStorageSync(AUTH_MODE_STORAGE_KEY, mode)
+  }
+
+  setBaseUrl(url: string) {
+    this.baseUrl = url
+    Taro.setStorageSync('api_base_url', url)
+    console.log('[HTTP] setBaseUrl - URL saved:', url)
+  }
+
+  getBaseUrl(): string {
+    return this.baseUrl
   }
 
   clearToken() {
@@ -171,5 +199,14 @@ class HttpRequest {
 }
 
 export const http = new HttpRequest(BASE_URL)
+
+// 导出配置方法
+export const setApiBaseUrl = (url: string) => {
+  http.setBaseUrl(url)
+}
+
+export const getApiBaseUrl = () => {
+  return http.getBaseUrl()
+}
 
 export default http

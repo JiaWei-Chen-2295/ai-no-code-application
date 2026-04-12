@@ -2,7 +2,7 @@
  * AI 对话页面
  */
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
 import { View, Text, Input, Button, ScrollView } from '@tarojs/components'
 import { useRouter } from '@tarojs/taro'
 import { generateCode } from '../../api/app'
@@ -10,7 +10,7 @@ import { getChatHistory } from '../../api/chatHistory'
 import './index.css'
 
 interface Message {
-  id: number
+  id: string
   content: string
   isUser: boolean
   isCode?: boolean
@@ -21,7 +21,7 @@ export default function ChatPage() {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [appId, setAppId] = useState<string | null>(null)
-  const scrollRef = useRef<any>(null)
+  const [scrollIntoView, setScrollIntoView] = useState('')
   const router = useRouter()
 
   useEffect(() => {
@@ -33,8 +33,16 @@ export default function ChatPage() {
   }, [])
 
   useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (messages.length > 0 || loading) {
+      setScrollIntoView('chat-bottom-anchor')
+    }
   }, [messages])
+
+  useEffect(() => {
+    if (loading) {
+      setScrollIntoView('chat-bottom-anchor')
+    }
+  }, [loading])
 
   const loadHistory = async (id: string) => {
     try {
@@ -60,7 +68,7 @@ export default function ChatPage() {
     // 添加用户消息
     setMessages((prev) => [
       ...prev,
-      { id: Date.now(), content: userMessage, isUser: true },
+      { id: String(Date.now()), content: userMessage, isUser: true },
     ])
 
     setLoading(true)
@@ -77,13 +85,13 @@ export default function ChatPage() {
       // 添加 AI 响应
       setMessages((prev) => [
         ...prev,
-        { id: Date.now() + 1, content: aiResponse, isUser: false, isCode: true },
+        { id: String(Date.now() + 1), content: aiResponse, isUser: false, isCode: true },
       ])
     } catch (err) {
       console.error('Failed to generate code:', err)
       setMessages((prev) => [
         ...prev,
-        { id: Date.now() + 1, content: '生成失败，请重试', isUser: false },
+        { id: String(Date.now() + 1), content: '生成失败，请重试', isUser: false },
       ])
     } finally {
       setLoading(false)
@@ -98,26 +106,28 @@ export default function ChatPage() {
 
   return (
     <View className="chat-container">
-      <ScrollView className="chat-messages" scrollY>
-        {messages.length === 0 ? (
-          <View className="empty-chat">
-            <Text>开始与 AI 对话，生成你的应用</Text>
-          </View>
-        ) : (
-          messages.map((msg) => (
-            <View key={msg.id} className={`message ${msg.isUser ? 'user' : 'ai'}`}>
-              <Text className={`message-content ${msg.isCode ? 'code' : ''}`}>
-                {msg.content}
-              </Text>
+      <ScrollView className="chat-messages" scrollY scrollIntoView={scrollIntoView}>
+        <View className="chat-messages-inner">
+          {messages.length === 0 ? (
+            <View className="empty-chat">
+              <Text>开始与 AI 对话，生成你的应用</Text>
             </View>
-          ))
-        )}
-        {loading && (
-          <View className="message ai">
-            <Text className="message-content loading">AI 正在生成代码...</Text>
-          </View>
-        )}
-        <View ref={scrollRef} />
+          ) : (
+            messages.map((msg) => (
+              <View key={msg.id} className={`message ${msg.isUser ? 'user' : 'ai'}`}>
+                <Text className={`message-content ${msg.isCode ? 'code' : ''}`}>
+                  {msg.content}
+                </Text>
+              </View>
+            ))
+          )}
+          {loading && (
+            <View className="message ai">
+              <Text className="message-content loading">AI 正在生成代码...</Text>
+            </View>
+          )}
+          <View id="chat-bottom-anchor" className="chat-bottom-anchor" />
+        </View>
       </ScrollView>
 
       <View className="chat-input-area">

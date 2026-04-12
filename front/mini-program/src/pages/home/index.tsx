@@ -7,6 +7,7 @@ import { View, Text, Image, ScrollView } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { getFeaturedAppList, getMyAppList, AppVO } from '../../api/app'
 import { useUser } from '../../store/user'
+import { getApiBaseUrl } from '../../utils/http'
 import './index.css'
 
 export default function HomePage() {
@@ -47,24 +48,26 @@ export default function HomePage() {
     Taro.navigateTo({ url: '/pages/create-app/index' })
   }
 
-  const renderAppCard = (app: AppVO) => (
-    <View className="app-card" key={app.id} onClick={() => handleAppClick(app.id)}>
-      <Image
-        className="app-cover"
-        src={app.cover || 'https://via.placeholder.com/300x200'}
-        mode="aspectFill"
-      />
-      <View className="app-info">
-        <Text className="app-name">{app.appName}</Text>
-        <Text className="app-desc">{app.initPrompt || '暂无描述'}</Text>
-        <View className="app-meta">
-          <Text className="app-author">{app.user?.name || '未知作者'}</Text>
-          <Text className="app-time">{app.createTime?.split('T')[0]}</Text>
+  const renderAppCard = (app: AppVO) => {
+    const coverUrl = app.cover ? getApiBaseUrl() + app.cover : 'https://img.yzcdn.cn/vant/cat.jpeg'
+    return (
+      <View className="app-card" key={app.id} onClick={() => handleAppClick(app.id)}>
+        <Image
+          className="app-cover"
+          src={coverUrl}
+          mode="aspectFill"
+        />
+        <View className="app-info">
+          <Text className="app-name">{app.appName}</Text>
+          <Text className="app-desc">{app.initPrompt || '暂无描述'}</Text>
+          <View className="app-meta">
+            <Text className="app-author">{app.user?.name || '未知作者'}</Text>
+            <Text className="app-time">{app.createTime?.split('T')[0]}</Text>
+          </View>
         </View>
       </View>
-    </View>
-  )
-
+    )
+  }
   return (
     <View className="home-container">
       <View className="home-header">

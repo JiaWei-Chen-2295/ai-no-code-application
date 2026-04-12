@@ -17,7 +17,10 @@ export default defineConfig({
     ['@tarojs/plugin-platform-weapp'],
     ['@tarojs/plugin-framework-react']
   ],
-  defineConstants: {},
+  defineConstants: {
+    VITE_API_BASE_URL: JSON.stringify(process.env.VITE_API_BASE_URL || 'http://localhost:8081'),
+    VITE_APP_NAME: JSON.stringify(process.env.VITE_APP_NAME || 'AI No-Code Mini Program'),
+  },
   mini: {
     compile: {
       include: [],

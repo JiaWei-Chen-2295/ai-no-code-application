@@ -5,6 +5,7 @@
 import React from 'react'
 import { View, Text, Image } from '@tarojs/components'
 import { AppVO } from '../../api/app'
+import { getApiBaseUrl } from '../../utils/http'
 import './AppCard.css'
 
 interface AppCardProps {
@@ -13,11 +14,12 @@ interface AppCardProps {
 }
 
 export default function AppCard({ app, onClick }: AppCardProps) {
+  const coverUrl = app.cover ? getApiBaseUrl() + app.cover : 'https://img.yzcdn.cn/vant/cat.jpeg'
   return (
     <View className="app-card" onClick={onClick}>
       <Image
         className="app-cover"
-        src={app.cover || 'https://via.placeholder.com/300x200'}
+        src={coverUrl}
         mode="aspectFill"
       />
       <View className="app-info">

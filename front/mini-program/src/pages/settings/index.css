@@ -30,3 +30,44 @@
   font-size: 28rpx;
   color: #d4c5ab;
 }
+
+.section-title {
+  font-size: 28rpx;
+  color: #666;
+  padding: 20rpx 40rpx;
+  background-color: #f9f9f9;
+}
+
+.api-config {
+  padding: 40rpx;
+}
+
+.config-label {
+  font-size: 30rpx;
+  color: #1a1c1c;
+  margin-bottom: 20rpx;
+  display: block;
+}
+
+.config-input {
+  border: 2rpx solid #e5e5e5;
+  border-radius: 8rpx;
+  padding: 20rpx;
+  font-size: 28rpx;
+  margin-bottom: 20rpx;
+  width: 100%;
+}
+
+.config-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.save-btn {
+  background-color: #007aff;
+  color: #ffffff;
+  padding: 16rpx 32rpx;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+  text-align: center;
+}
