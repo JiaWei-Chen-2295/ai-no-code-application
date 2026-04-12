@@ -10,8 +10,10 @@ import { getApiBaseUrl } from '../../utils/http'
 
 export default function PreviewPage() {
   const router = useRouter()
-  const { appId, version } = router.params
-  const previewUrl = `${getApiBaseUrl()}/api/static/preview/${appId}${version ? `/${version}` : ''}/index.html`
+  const { appId, version, url } = router.params
+  const previewUrl = url
+    ? decodeURIComponent(url)
+    : `${getApiBaseUrl()}/api/static/preview/${appId}${version ? `/${version}` : ''}/index.html`
 
   //http://localhost:8081/api/static/preview/396761853419716608/1/
 
