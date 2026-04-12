@@ -18,6 +18,16 @@
               </template>
             </a-input>
           </a-form-item>
+          <a-form-item name="email" :rules="[
+            { required: true, message: '请输入邮箱' },
+            { type: 'email', message: '邮箱格式不正确' },
+          ]">
+            <a-input v-model:value="formState.email" placeholder="请输入邮箱">
+              <template #prefix>
+                <Icon icon="mdi:email-outline" class="input-icon" />
+              </template>
+            </a-input>
+          </a-form-item>
           <a-form-item name="userPassword" :rules="[
             { required: true, message: '请输入密码' },
             { min: 8, message: '密码不能小于 8 位' },
@@ -67,6 +77,7 @@ const router = useRouter()
 
 const formState = reactive<API.UserRegisterRequest>({
   userAccount: '',
+  email: '',
   userPassword: '',
   checkPassword: '',
 })
