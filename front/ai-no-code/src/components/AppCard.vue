@@ -14,6 +14,9 @@
         </template>
 
         <template #actions v-if="!featured">
+            <a-tooltip title="开始聊天">
+                <Icon icon="mdi:chat-processing-outline" class="action-icon" @click="$emit('chat', app)" />
+            </a-tooltip>
             <a-tooltip title="查看应用">
                 <Icon icon="mdi:eye-outline" class="action-icon" @click="$emit('view', app)" />
             </a-tooltip>
@@ -71,6 +74,7 @@ defineEmits<{
     view: [app: API.AppVO]
     edit: [app: API.AppVO]
     delete: [app: API.AppVO]
+    chat: [app: API.AppVO]
 }>()
 
 // 获取代码生成类型标签

@@ -13,7 +13,7 @@
 
     <a-row :gutter="[24, 24]">
       <a-col :xs="24" :sm="12" :lg="8" :xl="6" v-for="app in apps" :key="app.id">
-        <AppCard :app="app" @view="viewApp" @edit="editApp" @delete="deleteApp" />
+        <AppCard :app="app" @view="viewApp" @edit="editApp" @delete="deleteApp" @chat="chatApp" />
       </a-col>
     </a-row>
 
@@ -60,6 +60,10 @@ const editApp = (app: API.AppVO) => {
 
 const viewApp = (app: API.AppVO) => {
   router.push(`/app/detail/${app.id}`)
+}
+
+const chatApp = (app: API.AppVO) => {
+  router.push(`/app/chat/${app.id}`)
 }
 
 const deleteApp = (app: API.AppVO) => {

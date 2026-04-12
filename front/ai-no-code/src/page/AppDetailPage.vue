@@ -17,13 +17,20 @@
         <a-col :span="8">
           <a-card title="操作" class="action-card">
             <div class="actions">
+              <a-button type="primary" block style="margin-bottom: 12px" @click="startChat">
+                <Icon icon="mdi:chat-processing-outline" class="action-icon" />
+                开始聊天
+              </a-button>
               <a-button type="primary" block style="margin-bottom: 12px" @click="editApp">
+                <Icon icon="mdi:pencil-outline" class="action-icon" />
                 编辑应用
               </a-button>
               <a-button block style="margin-bottom: 12px" @click="previewApp">
+                <Icon icon="mdi:play-circle-outline" class="action-icon" />
                 预览应用
               </a-button>
               <a-button danger block @click="deleteApp">
+                <Icon icon="mdi:delete-outline" class="action-icon" />
                 删除应用
               </a-button>
             </div>
@@ -48,11 +55,17 @@
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { message, Modal } from 'ant-design-vue'
+import { Icon } from '@iconify/vue'
 import { getAppVoById, deleteMyApp as deleteAppApi } from '@/api/appController'
 
 const router = useRouter()
 const route = useRoute()
 const app = ref<API.AppVO>()
+
+const startChat = () => {
+  if (!app.value?.id) return
+  router.push(`/app/chat/${app.value.id}`)
+}
 
 const loadApp = async () => {
   const id = route.params.id as string
@@ -180,6 +193,12 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-3);
+}
+
+.action-icon {
+  margin-right: var(--spacing-2);
+  font-size: 18px;
+  vertical-align: middle;
 }
 
 /* 覆盖按钮样式 */

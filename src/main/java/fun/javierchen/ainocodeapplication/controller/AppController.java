@@ -346,7 +346,7 @@ public class AppController {
             });
         });
 
-        // 所有错误（同步抛出 + 响应式信号）统一在此处理，转为结构化错误帧
+        // 所有错误（同步抛出 + 响应式信号）统一在xc此处理，转为结构化错误帧
         // 格式：{"error": true, "code": <ErrorCode>, "message": "<中文消息>"}
         Flux<ServerSentEvent<String>> withErrorHandling = stream.onErrorResume(e -> {
             int code;
