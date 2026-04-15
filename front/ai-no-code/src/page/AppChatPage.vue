@@ -108,6 +108,16 @@
                 <div class="preview-header">
                     <h3>生成预览</h3>
                     <div class="preview-actions">
+                        <a-button
+                            :type="elementPickerActive ? 'primary' : 'default'"
+                            size="small"
+                            :disabled="!previewUrl || isStreaming"
+                            @click="toggleElementPicker"
+                            :class="{ 'picker-active-btn': elementPickerActive }"
+                        >
+                            <Icon icon="mdi:cursor-pointer" class="action-icon" />
+                            <span>{{ elementPickerActive ? '退出选元素' : '选择元素' }}</span>
+                        </a-button>
                         <a-button v-if="previewUrl" @click="openInNewTab" size="small">
                             <Icon icon="mdi:open-in-new" class="action-icon" />
                             <span>新窗口打开</span>
@@ -118,6 +128,72 @@
                         </a-button>
                     </div>
                 </div>
+
+                <!-- 元素建议面板 -->
+                <div v-if="pickedElement" class="element-suggestion-panel">
+                    <div class="picked-element-info">
+                        <Icon icon="mdi:cursor-pointer" class="info-icon" />
+                        <span class="selector-label">{{ pickedElement.cssSelector }}</span>
+                        <a-button type="text" size="small" @click="clearPickedElement" class="clear-btn">
+                            <Icon icon="mdi:close" />
+                        </a-button>
+                    </div>
+                    <div class="suggestion-input-row">
+                        <a-input
+                            v-model:value="suggestionInstruction"
+                            placeholder="说明想如何修改此元素..."
+                            :maxlength="2000"
+                            :disabled="fetchingSuggestions"
+                            @keydown.enter.prevent="fetchSuggestions"
+                            class="suggestion-input"
+                        />
+                        <a-button
+                            type="primary"
+                            :loading="fetchingSuggestions"
+                            :disabled="!suggestionInstruction.trim()"
+                            @click="fetchSuggestions"
+                            class="suggestion-fetch-btn"
+                        >
+                            获取建议
+                        </a-button>
+                    </div>
+
+                    <!-- 建议卡片列表 -->
+                    <div v-if="elementSuggestions.length > 0" class="suggestions-list">
+                        <div
+                            v-for="(sug, idx) in elementSuggestions"
+                            :key="idx"
+                            class="suggestion-card"
+                        >
+                            <div class="suggestion-card-header">
+                                <span
+                                    class="priority-badge"
+                                    :class="{
+                                        'priority-1': sug.priority === 1,
+                                        'priority-2': sug.priority === 2,
+                                        'priority-3': sug.priority === 3
+                                    }"
+                                >
+                                    {{ sug.priority === 1 ? '高价值' : sug.priority === 2 ? '体验优化' : '锦上添花' }}
+                                </span>
+                                <span class="suggestion-title">{{ sug.title }}</span>
+                            </div>
+                            <p class="suggestion-desc">{{ sug.description }}</p>
+                            <a-button
+                                size="small"
+                                type="primary"
+                                ghost
+                                :disabled="isStreaming"
+                                @click="applySuggestion(sug)"
+                                class="apply-btn"
+                            >
+                                <Icon icon="mdi:send" class="action-icon" />
+                                应用此建议
+                            </a-button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="preview-content">
                     <div v-if="!isGenerated && messages.length === 0" class="preview-placeholder">
                         <div class="placeholder-content">
@@ -157,9 +233,10 @@ import DOMPurify from 'dompurify'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github-dark.css'
 import { Icon } from '@iconify/vue'
-import { getAppVoById, deployApp as deployAppApi, getAppVersions } from '@/api/appController'
+import { getAppVoById, deployApp as deployAppApi, getAppVersions, getElementSuggestions } from '@/api/appController'
 import { listAppChatHistory } from '@/api/chatHistoryController'
 import { useUserStore } from '@/stores/userStore'
+import { enableElementPicker, disableElementPicker, type ElementPickedPayload } from '@/utils/elementPicker'
 
 interface Message {
     id?: number
@@ -200,6 +277,13 @@ const typingMessageIndex = ref(-1) // 当前正在打字的消息索引
 const typingBuffer = ref('') // 待输出的完整内容
 const typingTimer = ref<number | null>(null) // 打字计时器
 const typingSpeed = ref(30) // 打字速度(ms)，越小越快
+
+// 元素选取 & 建议相关状态
+const elementPickerActive = ref(false)
+const pickedElement = ref<{ cssSelector: string; elementContext: string; tagName: string } | null>(null)
+const suggestionInstruction = ref('')
+const fetchingSuggestions = ref(false)
+const elementSuggestions = ref<API.ElementSuggestionVO[]>([])
 
 // 全局函数：复制代码到剪贴板
 const setupGlobalFunctions = () => {
@@ -251,6 +335,7 @@ const setupGlobalFunctions = () => {
 // 页面初始化
 onMounted(async () => {
     setupGlobalFunctions()
+    window.addEventListener('message', onIframeMessage)
     await userStore.fetchLoginUser()
     await loadApp()
     await loadVersions()
@@ -260,6 +345,10 @@ onMounted(async () => {
 // 组件卸载时清理
 onUnmounted(() => {
     clearTypingEffect()
+    if (elementPickerActive.value && previewIframe.value) {
+        disableElementPicker(previewIframe.value)
+    }
+    window.removeEventListener('message', onIframeMessage)
 })
 
 // 监听消息变化，自动滚动到底部
@@ -302,6 +391,101 @@ const checkAndSendInitialMessage = async () => {
     if (isMyApp && hasNoHistory) {
         await sendInitialMessage()
     }
+}
+
+// ---- 元素选取相关 ----
+
+/** 处理 iframe 发来的 postMessage */
+const onIframeMessage = (event: MessageEvent) => {
+    const expectedOrigin = window.location.origin
+    if (event.origin !== expectedOrigin) return
+    const payload = event.data as ElementPickedPayload
+    if (payload?.type !== 'elementPicked') return
+
+    // 关闭选取模式
+    elementPickerActive.value = false
+    if (previewIframe.value) {
+        disableElementPicker(previewIframe.value)
+    }
+
+    pickedElement.value = {
+        cssSelector: payload.cssSelector,
+        elementContext: payload.elementContext,
+        tagName: payload.tagName
+    }
+    elementSuggestions.value = []
+    suggestionInstruction.value = ''
+}
+
+/** 开/关 元素选取模式 */
+const toggleElementPicker = () => {
+    if (!previewIframe.value) return
+    elementPickerActive.value = !elementPickerActive.value
+    if (elementPickerActive.value) {
+        const ok = enableElementPicker(previewIframe.value, window.location.origin)
+        if (!ok) {
+            elementPickerActive.value = false
+            message.error('无法访问预览内容，请确认预览已加载完成')
+            return
+        }
+        pickedElement.value = null
+        elementSuggestions.value = []
+    } else {
+        disableElementPicker(previewIframe.value)
+    }
+}
+
+/** 清除已选元素面板 */
+const clearPickedElement = () => {
+    pickedElement.value = null
+    elementSuggestions.value = []
+    suggestionInstruction.value = ''
+}
+
+/** 调用后端生成元素修改建议 */
+const fetchSuggestions = async () => {
+    if (!pickedElement.value || !suggestionInstruction.value.trim() || !app.value?.id) return
+    fetchingSuggestions.value = true
+    elementSuggestions.value = []
+    try {
+        const res = await getElementSuggestions({
+            appId: app.value.id,
+            message: suggestionInstruction.value.trim(),
+            cssSelector: pickedElement.value.cssSelector,
+            elementContext: pickedElement.value.elementContext,
+            codeGenType: app.value.codeGenType
+        })
+        if (res.data.code === 0 && res.data.data) {
+            elementSuggestions.value = res.data.data
+        } else {
+            message.error('获取建议失败：' + (res.data.message || '未知错误'))
+        }
+    } catch {
+        message.error('获取建议失败，请检查网络后重试')
+    } finally {
+        fetchingSuggestions.value = false
+    }
+}
+
+/** 将建议内容注入到 streamChat 流程中 */
+const applySuggestion = async (sug: API.ElementSuggestionVO) => {
+    if (isStreaming.value) return
+    const selector = pickedElement.value?.cssSelector ?? ''
+    const context  = pickedElement.value?.elementContext ?? ''
+
+    // 构造带元素上下文的完整指令，让 AI 知道要修改哪个元素
+    let text = `请针对以下元素进行修改。\n\n**目标元素选择器：** \`${selector}\`\n\n**修改要求：** ${sug.title}：${sug.description}`
+
+    if (context && context.startsWith('Vue component:')) {
+        text += `\n\n**组件信息：** ${context}`
+    } else if (context) {
+        const snippet = context.length > 800 ? context.substring(0, 800) + '...' : context
+        text += `\n\n**元素当前HTML：**\n\`\`\`html\n${snippet}\n\`\`\``
+    }
+
+    currentMessage.value = text
+    clearPickedElement()
+    await sendMessage()
 }
 
 // 发送初始消息
@@ -577,21 +761,22 @@ const updatePreviewUrl = () => {
     const hasEnoughHistory = messages.value.length >= 2
     if (!isGenerated.value && !hasEnoughHistory) return
 
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || ''
+    // 始终使用相对路径，确保 iframe 与父页面同源（Vite 代理 /api → 后端）
+    // 这样才能访问 contentDocument 实现元素选取功能
     const isVueProject = app.value.codeGenType === 'vueProject'
 
     if (selectedVersion.value === 'latest') {
         // 获取最新版本号
         const latestVersion = getLatestVersion()
         if (latestVersion) {
-            previewUrl.value = `${baseUrl}/api/static/preview/${app.value.id}/${latestVersion}/`
+            previewUrl.value = `/api/static/preview/${app.value.id}/${latestVersion}/`
         } else {
             // latest 但还没有版本号
             // 对于 vue 项目，必须带版本号，默认 1
-            previewUrl.value = `${baseUrl}/api/static/preview/${app.value.id}/${isVueProject ? 1 : ''}${isVueProject ? '/' : ''}`
+            previewUrl.value = `/api/static/preview/${app.value.id}/${isVueProject ? 1 : ''}${isVueProject ? '/' : ''}`
         }
     } else {
-        previewUrl.value = `${baseUrl}/api/static/preview/${app.value.id}/${selectedVersion.value}/`
+        previewUrl.value = `/api/static/preview/${app.value.id}/${selectedVersion.value}/`
     }
 }
 
@@ -632,6 +817,10 @@ const openInNewTab = () => {
 // iframe加载完成
 const onIframeLoad = () => {
     refreshing.value = false
+    // 如果选取模式处于开启状态（例如 iframe 刷新后），重新注入
+    if (elementPickerActive.value && previewIframe.value) {
+        enableElementPicker(previewIframe.value, window.location.origin)
+    }
 }
 
 // 返回上一页
@@ -1528,6 +1717,135 @@ const renderVueProjectContent = (content: string) => {
     height: 100%;
     border: none;
     background: var(--claude-surface-white);
+}
+
+/* 元素选取模式激活时的按钮样式 */
+.picker-active-btn {
+    background: var(--claude-accent-terracotta) !important;
+    border-color: var(--claude-accent-terracotta) !important;
+    color: #fff !important;
+}
+
+/* 元素建议面板 */
+.element-suggestion-panel {
+    padding: 12px 16px;
+    background: var(--claude-surface-sand, #faf8f5);
+    border-bottom: 1px solid var(--claude-border-warm);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 360px;
+    overflow-y: auto;
+}
+
+.picked-element-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--claude-text-secondary);
+}
+
+.picked-element-info .info-icon {
+    width: 16px;
+    height: 16px;
+    color: #6366f1;
+    flex-shrink: 0;
+}
+
+.selector-label {
+    font-family: monospace;
+    background: var(--claude-surface-white);
+    border: 1px solid var(--claude-border-light);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 280px;
+}
+
+.clear-btn {
+    margin-left: auto;
+    color: var(--claude-text-tertiary) !important;
+}
+
+.suggestion-input-row {
+    display: flex;
+    gap: 8px;
+}
+
+.suggestion-input {
+    flex: 1;
+    border-radius: 8px !important;
+}
+
+.suggestion-fetch-btn {
+    flex-shrink: 0;
+}
+
+/* 建议卡片 */
+.suggestions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.suggestion-card {
+    background: var(--claude-surface-white);
+    border: 1px solid var(--claude-border-warm);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.suggestion-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.priority-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.priority-1 {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.priority-2 {
+    background: #ffedd5;
+    color: #c2410c;
+}
+
+.priority-3 {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.suggestion-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--claude-text-primary);
+}
+
+.suggestion-desc {
+    font-size: 13px;
+    color: var(--claude-text-secondary);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.apply-btn {
+    align-self: flex-end;
 }
 
 /* 响应式设计 */

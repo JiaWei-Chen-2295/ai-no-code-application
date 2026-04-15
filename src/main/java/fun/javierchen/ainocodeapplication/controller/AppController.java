@@ -14,9 +14,12 @@ import fun.javierchen.ainocodeapplication.exceptiom.ErrorCode;
 import fun.javierchen.ainocodeapplication.model.User;
 import fun.javierchen.ainocodeapplication.model.dto.app.*;
 import fun.javierchen.ainocodeapplication.model.entity.App;
+import fun.javierchen.ainocodeapplication.model.dto.app.ElementSuggestionRequest;
 import fun.javierchen.ainocodeapplication.model.vo.AppVO;
 import fun.javierchen.ainocodeapplication.model.vo.AppVersionVO;
+import fun.javierchen.ainocodeapplication.model.vo.ElementSuggestionVO;
 import fun.javierchen.ainocodeapplication.service.AppService;
+import fun.javierchen.ainocodeapplication.utils.CssSelectorValidator;
 import fun.javierchen.ainocodeapplication.service.UserService;
 import fun.javierchen.ainocodeapplication.utils.ResultUtils;
 import fun.javierchen.ainocodeapplication.utils.ThrowUtils;
@@ -444,5 +447,33 @@ public class AppController {
         User loginUser = userService.getLoginUser(request);
         boolean result = appService.deleteAppVersion(appId, version, loginUser);
         return ResultUtils.success(result);
+    }
+
+    /**
+     * 生成元素修改建议
+     */
+    @PostMapping("/element/suggestions")
+    public BaseResponse<List<ElementSuggestionVO>> getElementSuggestions(
+            @RequestBody ElementSuggestionRequest elementSuggestionRequest,
+            HttpServletRequest request) {
+        if (elementSuggestionRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        String message = elementSuggestionRequest.getMessage();
+        String cssSelector = elementSuggestionRequest.getCssSelector();
+        String elementContext = elementSuggestionRequest.getElementContext();
+
+        ThrowUtils.throwIf(StringUtils.isBlank(message), ErrorCode.PARAMS_ERROR, "用户指令不能为空");
+        ThrowUtils.throwIf(message.length() > 2000, ErrorCode.PARAMS_ERROR, "用户指令过长，请保持在 2000 字以内");
+        ThrowUtils.throwIf(StringUtils.isBlank(cssSelector), ErrorCode.PARAMS_ERROR, "CSS 选择器不能为空");
+        ThrowUtils.throwIf(cssSelector.length() > 500, ErrorCode.PARAMS_ERROR, "CSS 选择器过长");
+        ThrowUtils.throwIf(!CssSelectorValidator.isValid(cssSelector), ErrorCode.PARAMS_ERROR, "CSS 选择器含有非法字符");
+        if (StringUtils.isNotBlank(elementContext) && elementContext.length() > 5000) {
+            elementSuggestionRequest.setElementContext(elementContext.substring(0, 5000));
+        }
+
+        User loginUser = userService.getLoginUser(request);
+        List<ElementSuggestionVO> suggestions = appService.generateElementSuggestions(elementSuggestionRequest, loginUser);
+        return ResultUtils.success(suggestions);
     }
 }

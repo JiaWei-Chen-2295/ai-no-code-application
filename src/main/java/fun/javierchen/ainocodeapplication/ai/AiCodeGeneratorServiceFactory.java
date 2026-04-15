@@ -86,6 +86,24 @@ public class AiCodeGeneratorServiceFactory {
         return serviceCache.get(cacheKey, key -> createAiCodeGeneratorService(appId, codeGenType));
     }
 
+    /**
+     * 创建专用于元素建议生成的轻量服务实例（无记忆、无流式、带输入守卫）。
+     * 使用独立接口 {@link ElementSuggestionAiService} 避免 @MemoryId 触发
+     * LangChain4j 对 ChatMemoryProvider 的强制校验。
+     */
+    public ElementSuggestionAiService createSuggestionService() {
+        var llmJudge = new GuardrailLlmJudge(chatModel);
+        List<InputGuardrail> inputGuardrails = List.of(
+                new InputLengthGuardrail(8000),
+                new PromptInjectionGuardrail(llmJudge),
+                new ContentModerationInputGuardrail(llmJudge)
+        );
+        return AiServices.builder(ElementSuggestionAiService.class)
+                .chatModel(chatModel)
+                .inputGuardrails(inputGuardrails.toArray(new InputGuardrail[0]))
+                .build();
+    }
+
 
     public AiCodeGeneratorService createAiCodeGeneratorService(Long appId, CodeGenTypeEnum codeGenType) {
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder()

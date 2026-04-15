@@ -208,3 +208,19 @@ export async function updateMyApp(body: API.AppUpdateMyRequest, options?: { [key
     ...(options || {}),
   })
 }
+
+/** POST /app/element/suggestions — 生成元素修改建议 */
+export async function getElementSuggestions(
+  body: API.ElementSuggestionRequest,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseListElementSuggestionVO>('/app/element/suggestions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    timeout: 120000,
+    data: body,
+    ...(options || {}),
+  })
+}

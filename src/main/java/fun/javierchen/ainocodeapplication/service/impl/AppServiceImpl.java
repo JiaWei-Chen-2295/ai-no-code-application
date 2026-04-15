@@ -6,6 +6,8 @@ import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
+import fun.javierchen.ainocodeapplication.ai.AiCodeGeneratorServiceFactory;
+import fun.javierchen.ainocodeapplication.ai.model.ElementSuggestionsResult;
 import fun.javierchen.ainocodeapplication.ai.model.enums.CodeGenTypeEnum;
 import fun.javierchen.ainocodeapplication.constant.AppConstant;
 import fun.javierchen.ainocodeapplication.constant.CodeFileConstant;
@@ -18,9 +20,11 @@ import fun.javierchen.ainocodeapplication.mapper.AppMapper;
 import fun.javierchen.ainocodeapplication.model.User;
 import fun.javierchen.ainocodeapplication.model.entity.App;
 import fun.javierchen.ainocodeapplication.model.dto.app.AppQueryRequest;
+import fun.javierchen.ainocodeapplication.model.dto.app.ElementSuggestionRequest;
 import fun.javierchen.ainocodeapplication.model.entity.ChatHistory;
 import fun.javierchen.ainocodeapplication.model.vo.AppVO;
 import fun.javierchen.ainocodeapplication.model.vo.AppVersionVO;
+import fun.javierchen.ainocodeapplication.model.vo.ElementSuggestionVO;
 import fun.javierchen.ainocodeapplication.model.vo.UserVO;
 import fun.javierchen.ainocodeapplication.service.AppService;
 import fun.javierchen.ainocodeapplication.service.ChatHistoryService;
@@ -69,6 +73,9 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
 
     @Resource
     private VueProjectBuilder vueProjectBuilder;
+
+    @Resource
+    private AiCodeGeneratorServiceFactory aiCodeGeneratorServiceFactory;
 
     @Override
     public void validApp(App app, boolean add) {
@@ -785,5 +792,41 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
             log.error("保存Vue项目过程中发生未知错误: {}", e.getMessage(), e);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "保存Vue项目失败: " + e.getMessage());
         }
+    }
+
+    @Override
+    public List<ElementSuggestionVO> generateElementSuggestions(ElementSuggestionRequest request, User loginUser) {
+        ThrowUtils.throwIf(request == null, ErrorCode.PARAMS_ERROR);
+        Long appId = request.getAppId();
+        ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用 ID 不能为空");
+        App app = this.getById(appId);
+        ThrowUtils.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "应用不存在");
+        if (!app.getUserId().equals(loginUser.getId())) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权限访问该应用");
+        }
+
+        // 构造给 AI 的用户消息
+        StringBuilder prompt = new StringBuilder();
+        prompt.append("目标元素 CSS 选择器：").append(request.getCssSelector()).append("\n");
+        if (StrUtil.isNotBlank(request.getElementContext())) {
+            prompt.append("元素上下文：").append(request.getElementContext()).append("\n");
+        }
+        prompt.append("用户指令：").append(request.getMessage());
+
+        ElementSuggestionsResult result = aiCodeGeneratorServiceFactory
+                .createSuggestionService()
+                .generateElementSuggestions(prompt.toString());
+
+        if (result == null || result.getSuggestions() == null) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "AI 未返回有效建议");
+        }
+
+        return result.getSuggestions().stream()
+                .map(s -> ElementSuggestionVO.builder()
+                        .title(s.getTitle())
+                        .description(s.getDescription())
+                        .priority(s.getPriority())
+                        .build())
+                .collect(Collectors.toList());
     }
 }

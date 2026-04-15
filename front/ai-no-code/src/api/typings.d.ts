@@ -26,6 +26,27 @@ declare namespace API {
     version?: number
   }
 
+  type ElementSuggestionRequest = {
+    appId?: number
+    message?: string
+    cssSelector?: string
+    elementContext?: string
+    codeGenType?: string
+  }
+
+  type ElementSuggestionVO = {
+    title?: string
+    description?: string
+    /** 1=高价值核心, 2=体验优化, 3=锦上添花 */
+    priority?: number
+  }
+
+  type BaseResponseListElementSuggestionVO = {
+    code?: number
+    data?: ElementSuggestionVO[]
+    message?: string
+  }
+
   type AppQueryRequest = {
     current?: number
     pageSize?: number

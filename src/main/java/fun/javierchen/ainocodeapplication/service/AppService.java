@@ -7,6 +7,8 @@ import fun.javierchen.ainocodeapplication.model.entity.App;
 import fun.javierchen.ainocodeapplication.model.dto.app.AppQueryRequest;
 import fun.javierchen.ainocodeapplication.model.vo.AppVO;
 import fun.javierchen.ainocodeapplication.model.vo.AppVersionVO;
+import fun.javierchen.ainocodeapplication.model.dto.app.ElementSuggestionRequest;
+import fun.javierchen.ainocodeapplication.model.vo.ElementSuggestionVO;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
@@ -120,4 +122,13 @@ public interface AppService extends IService<App> {
      * @return 项目目录
      */
     java.io.File saveVueProject(Long appId, int version);
+
+    /**
+     * 生成元素修改建议
+     *
+     * @param request   元素建议请求
+     * @param loginUser 当前用户
+     * @return 3 条修改建议
+     */
+    List<ElementSuggestionVO> generateElementSuggestions(ElementSuggestionRequest request, User loginUser);
 }
